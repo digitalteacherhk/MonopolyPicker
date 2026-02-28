@@ -1,47 +1,36 @@
-<!DOCTYPE html>
 <html>
 <head>
     <title>Monopoly Picker</title>
     <script>
-        // Sound variables
-        var diceRollSound = new Audio('path/to/dice-roll.mp3');
-        var winSound = new Audio('path/to/win.mp3');
-        var specialEventSound = new Audio('path/to/special-event.mp3');
-
-        // Function to play dice roll sound
-        function playDiceRollSound() {
-            diceRollSound.play();
-        }
-
-        // Function to play winning sound
-        function playWinSound() {
-            winSound.play();
-        }
-
-        // Function to play special event sound
-        function playSpecialEventSound() {
-            specialEventSound.play();
-        }
-
-        // Example of where to call these functions during the game
-        function rollDice() {
-            playDiceRollSound();
-            // Dice rolling logic here
-        }
-
-        function playerWins() {
-            playWinSound();
-            // Winning logic here
-        }
-
-        function specialEvent() {
-            playSpecialEventSound();
-            // Special event logic here
+        function playSound(eventType) {
+            const audio = new Audio();
+            switch (eventType) {
+                case 'dice':
+                    audio.src = 'sounds/dice-roll.mp3';
+                    break;
+                case 'win':
+                    audio.src = 'sounds/win.mp3';
+                    break;
+                case 'chance':
+                    audio.src = 'sounds/chance.mp3';
+                    break;
+                case 'fate':
+                    audio.src = 'sounds/fate.mp3';
+                    break;
+                default:
+                    return;
+            }
+            audio.play();
         }
     </script>
 </head>
 <body>
-    <h1>Welcome to Monopoly Picker</h1>
-    <!-- Game content here -->
+    <h1>Welcome to Monopoly Picker!</h1>
+
+    <!-- Example of triggering sound: -->
+    <button onclick="playSound('dice')">Roll Dice</button>
+    <button onclick="playSound('win')">Win</button>
+
+    <!-- Add your game's HTML here -->
 </body>
 </html>
