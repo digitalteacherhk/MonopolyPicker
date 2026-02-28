@@ -678,10 +678,9 @@
         if(activeCell) activeCell.classList.add('active');
     }
 
-function rollDice() {
+    function rollDice() {
         if (isAnimating) return;
         isAnimating = true;
-        playSound('click'); // 🎵 播放點擊音效
         closeResult(); 
         let s1 = Math.floor(Math.random() * 6) + 1;
         let s2 = Math.floor(Math.random() * 6) + 1;
@@ -689,7 +688,6 @@ function rollDice() {
         let timer = setInterval(() => {
             document.getElementById('dice1').innerText = Math.floor(Math.random() * 6) + 1;
             document.getElementById('dice2').innerText = Math.floor(Math.random() * 6) + 1;
-            playSound('move'); // 🎵 擲骰子時發出快速的跳動聲
             if(count++ > 10) {
                 clearInterval(timer);
                 document.getElementById('dice1').innerText = s1;
@@ -701,7 +699,6 @@ function rollDice() {
 
     function startMarquee() {
         if (isAnimating) return;
-        playSound('click');
         isAnimating = true;
         closeResult();
         move(Math.floor(Math.random() * mapData.length) + mapData.length, true);
@@ -709,58 +706,59 @@ function rollDice() {
 
     function move(steps, isMarquee = false) {
         if (steps <= 0) { land(); return; }
-        playSound('move');
         currentIndex = (currentIndex + 1) % mapData.length;
         updatePos();
         setTimeout(() => move(steps - 1, isMarquee), isMarquee ? 40 : 150);
     }
 
-function land() {
-    const data = mapData[currentIndex];
-    const modal = document.getElementById('result-modal');
-    const box = document.getElementById('result-box');
-    const title = document.getElementById('result-title');
-    const display = document.getElementById('result-display');
-    
-    modal.style.display = 'flex';
-    
-    let historyEntry = { time: new Date().toLocaleTimeString() };
+    function land() {
+        const data = mapData[currentIndex];
+        const modal = document.getElementById('result-modal');
+        const box = document.getElementById('result-box');
+        const title = document.getElementById('result-title');
+        const display = document.getElementById('result-display');
+        
+        modal.style.display = 'flex';
+        
+        let historyEntry = { time: new Date().toLocaleTimeString() };
 
-    if (data.type === 'student') {
-        playSound('win');
-        document.getElementById('status-text').innerText = i18n[currentLang].statusWinner;
-        title.innerText = i18n[currentLang].titleWinner;
-        title.style.color = '#333';
-        display.innerHTML = `<div class="result-name">${data.name}</div>`;
-        box.style.borderColor = 'var(--monopoly-blue)';
+        if (data.type === 'student') {
+            document.getElementById('status-text').innerText = i18n[currentLang].statusWinner;
+            title.innerText = i18n[currentLang].titleWinner;
+            title.style.color = '#333';
+            display.innerHTML = `<div class="result-name">${data.name}</div>`;
+            box.style.borderColor = 'var(--monopoly-blue)';
+            
+            // 寫入歷史紀錄
+            historyEntry.text = `📍 幸運兒：<span style="color:var(--monopoly-blue);">${data.name}</span>`;
+            
+            // 呼叫紙吹雪特效 (確保層級蓋過彈出視窗)
+            confetti({
+                particleCount: 150,
+                spread: 80,
+                origin: { y: 0.6 },
+                zIndex: 3000
+            });
+            
+        } else {
+            const list = data.type === 'chance' ? chanceList : fateList;
+            const content = list[Math.floor(Math.random() * list.length)];
+            document.getElementById('status-text').innerText = data.type === 'chance' ? i18n[currentLang].statusChance : i18n[currentLang].statusFate;
+            
+            title.innerText = data.type === 'chance' ? i18n[currentLang].titleChance : i18n[currentLang].titleFate;
+            const color = data.type === 'chance' ? '#d97706' : '#dc2626';
+            title.style.color = color;
+            display.innerHTML = `<div class="result-text" style="color:${color}">${content}</div>`;
+            box.style.borderColor = color;
+            
+            // 寫入歷史紀錄
+            const typeStr = data.type === 'chance' ? '🎁 機會' : '⚡ 命運';
+            historyEntry.text = `<span style="color:${color}">${typeStr}：${content}</span>`;
+        }
         
-        historyEntry.text = `📍 幸運兒：<span style="color:var(--monopoly-blue);">${data.name}</span>`;
-        
-        confetti({
-            particleCount: 150,
-            spread: 80,
-            origin: { y: 0.6 },
-            zIndex: 3000
-        });
-        
-    } else {
-        playSound('magic');
-        const list = data.type === 'chance' ? chanceList : fateList;
-        const content = list[Math.floor(Math.random() * list.length)];
-        document.getElementById('status-text').innerText = data.type === 'chance' ? i18n[currentLang].statusChance : i18n[currentLang].statusFate;
-        
-        title.innerText = data.type === 'chance' ? i18n[currentLang].titleChance : i18n[currentLang].titleFate;
-        const color = data.type === 'chance' ? '#d97706' : '#dc2626';
-        title.style.color = color;
-        display.innerHTML = `<div class="result-text" style="color:${color}">${content}</div>`;
-        box.style.borderColor = color;
-        
-        const typeStr = data.type === 'chance' ? '🎁 機會' : '⚡ 命運';
-        historyEntry.text = `<span style="color:${color}">${typeStr}：${content}</span>`;
+        // 將紀錄加到最前面
+        historyData.unshift(historyEntry);
     }
-    
-    historyData.unshift(historyEntry);
-}
 
     function closeResult() {
         document.getElementById('result-modal').style.display = 'none';
@@ -769,7 +767,6 @@ function land() {
 
     function shuffleBoard() {
         if (isAnimating) return;
-        playSound('shuffle');
         closeResult();
         students.sort(() => Math.random() - 0.5);
         generateMap();
@@ -779,7 +776,6 @@ function land() {
 
     function resetBoard() {
         if (isAnimating) return;
-        playSound('click');
         closeResult();
         students = JSON.parse(JSON.stringify(originalStudents));
         currentIndex = 0;
@@ -800,25 +796,7 @@ function land() {
         });
         generateMap(); renderBoard();
     }
-const sounds = {
-        click: new Audio('https://actions.google.com/sounds/v1/ui/button_click.ogg'),
-        move: new Audio('https://actions.google.com/sounds/v1/ui/wood_click.ogg'),
-        win: new Audio('https://actions.google.com/sounds/v1/cartoon/cartoon_success_fanfare.ogg'),
-        magic: new Audio('https://actions.google.com/sounds/v1/magic/fairy_wand_magic.ogg'),
-        shuffle: new Audio('https://actions.google.com/sounds/v1/cartoon/slip_and_crash.ogg')
-    };
 
-    // 調整部分音效大小，避免聲音太刺耳
-    sounds.move.volume = 0.3;
-    sounds.click.volume = 0.6;
-    sounds.win.volume = 0.8;
-
-    function playSound(type) {
-        if (sounds[type]) {
-            sounds[type].currentTime = 0; // 歸零，讓音效可以快速連續播放
-            sounds[type].play().catch(e => console.log("瀏覽器攔截了自動播放:", e));
-        }
-    }
     // 初始化
     changeLanguage('zh');
 </script>
