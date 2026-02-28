@@ -715,60 +715,52 @@ function rollDice() {
         setTimeout(() => move(steps - 1, isMarquee), isMarquee ? 40 : 150);
     }
 
-    function land() {
-        const data = mapData[currentIndex];
-        const modal = document.getElementById('result-modal');
-        const box = document.getElementById('result-box');
-        const title = document.getElementById('result-title');
-        const display = document.getElementById('result-display');
-        if (data.type === 'student') {
-            playSound('win'); // 🎵 播放抽中歡呼音效
-            
-            // ... (保留原本的狀態更新、歷史紀錄與 confetti 紙吹雪程式碼)
-            
-        } else {
-            playSound('magic'); // 🎵 播放機會命運的魔法音效
-        modal.style.display = 'flex';
-        
-        let historyEntry = { time: new Date().toLocaleTimeString() };
+function land() {
+    const data = mapData[currentIndex];
+    const modal = document.getElementById('result-modal');
+    const box = document.getElementById('result-box');
+    const title = document.getElementById('result-title');
+    const display = document.getElementById('result-display');
+    
+    modal.style.display = 'flex';
+    
+    let historyEntry = { time: new Date().toLocaleTimeString() };
 
-        if (data.type === 'student') {
-            document.getElementById('status-text').innerText = i18n[currentLang].statusWinner;
-            title.innerText = i18n[currentLang].titleWinner;
-            title.style.color = '#333';
-            display.innerHTML = `<div class="result-name">${data.name}</div>`;
-            box.style.borderColor = 'var(--monopoly-blue)';
-            
-            // 寫入歷史紀錄
-            historyEntry.text = `📍 幸運兒：<span style="color:var(--monopoly-blue);">${data.name}</span>`;
-            
-            // 呼叫紙吹雪特效 (確保層級蓋過彈出視窗)
-            confetti({
-                particleCount: 150,
-                spread: 80,
-                origin: { y: 0.6 },
-                zIndex: 3000
-            });
-            
-        } else {
-            const list = data.type === 'chance' ? chanceList : fateList;
-            const content = list[Math.floor(Math.random() * list.length)];
-            document.getElementById('status-text').innerText = data.type === 'chance' ? i18n[currentLang].statusChance : i18n[currentLang].statusFate;
-            
-            title.innerText = data.type === 'chance' ? i18n[currentLang].titleChance : i18n[currentLang].titleFate;
-            const color = data.type === 'chance' ? '#d97706' : '#dc2626';
-            title.style.color = color;
-            display.innerHTML = `<div class="result-text" style="color:${color}">${content}</div>`;
-            box.style.borderColor = color;
-            
-            // 寫入歷史紀錄
-            const typeStr = data.type === 'chance' ? '🎁 機會' : '⚡ 命運';
-            historyEntry.text = `<span style="color:${color}">${typeStr}：${content}</span>`;
-        }
+    if (data.type === 'student') {
+        playSound('win');
+        document.getElementById('status-text').innerText = i18n[currentLang].statusWinner;
+        title.innerText = i18n[currentLang].titleWinner;
+        title.style.color = '#333';
+        display.innerHTML = `<div class="result-name">${data.name}</div>`;
+        box.style.borderColor = 'var(--monopoly-blue)';
         
-        // 將紀錄加到最前面
-        historyData.unshift(historyEntry);
+        historyEntry.text = `📍 幸運兒：<span style="color:var(--monopoly-blue);">${data.name}</span>`;
+        
+        confetti({
+            particleCount: 150,
+            spread: 80,
+            origin: { y: 0.6 },
+            zIndex: 3000
+        });
+        
+    } else {
+        playSound('magic');
+        const list = data.type === 'chance' ? chanceList : fateList;
+        const content = list[Math.floor(Math.random() * list.length)];
+        document.getElementById('status-text').innerText = data.type === 'chance' ? i18n[currentLang].statusChance : i18n[currentLang].statusFate;
+        
+        title.innerText = data.type === 'chance' ? i18n[currentLang].titleChance : i18n[currentLang].titleFate;
+        const color = data.type === 'chance' ? '#d97706' : '#dc2626';
+        title.style.color = color;
+        display.innerHTML = `<div class="result-text" style="color:${color}">${content}</div>`;
+        box.style.borderColor = color;
+        
+        const typeStr = data.type === 'chance' ? '🎁 機會' : '⚡ 命運';
+        historyEntry.text = `<span style="color:${color}">${typeStr}：${content}</span>`;
     }
+    
+    historyData.unshift(historyEntry);
+}
 
     function closeResult() {
         document.getElementById('result-modal').style.display = 'none';
