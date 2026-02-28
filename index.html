@@ -1,1 +1,834 @@
-<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>Monopoly Picker</title>\n</head>\n<body>\n    <h1>Welcome to the Monopoly Picker!</h1>\n    \n    <!-- Audio Elements -->\n    <audio id="diceRollSound" src="path/to/dice-roll.mp3"></audio>\n    <audio id="winningSound" src="path/to/winning.mp3"></audio>\n    <audio id="chanceSound" src="path/to/chance.mp3"></audio>\n    <audio id="fateSound" src="path/to/fate.mp3"></audio>\n    \n    <script>\n        function playSound(soundId) {\n            const sound = document.getElementById(soundId);\n            if (sound) {\n                sound.currentTime = 0; // rewind to start\n                sound.play();\n            }\n        }\n        \n        // Usage examples - you can replace these with actual game events\n        // playSound('diceRollSound');\n        // playSound('winningSound');\n        // playSound('chanceSound');\n        // playSound('fateSound');\n    <\/script>\n</body>\n</html>
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>大富翁抽籤系統 V2 - 雲端版</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --board-bg: #cde6d0;
+            --center-bg: #fbf8ef;
+            --border-color: #111;
+            --monopoly-red: #e63946;
+            --monopoly-blue: #0072bb;
+            --monopoly-green: #1fb25a;
+            --monopoly-purple: #8b5cf6;
+            --monopoly-yellow: #ffb703;
+        }
+
+        body {
+            background-color: var(--board-bg);
+            color: #000;
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            /* 避免手機雙擊放大 */
+            touch-action: manipulation;
+        }
+
+        /* 遊戲主體 */
+        #board-container {
+            position: relative;
+            width: 95vw;
+            height: 53.4vw;
+            max-width: 1200px;
+            max-height: 675px;
+            display: grid;
+            gap: 2px;
+            background: var(--border-color);
+            border: 4px solid var(--border-color);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        }
+
+        .cell {
+            background: #fff;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            text-align: center;
+            font-weight: bold;
+            transition: all 0.1s;
+            overflow: hidden;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            z-index: 5;
+        }
+
+        .cell-text { 
+            padding: 0px; 
+            font-size: clamp(5px, 3vmin, 40px);
+            color: #111;
+            word-break: break-word;
+            line-height: 1.2;
+            font-weight: bold;
+        }
+
+        .cell.chance { background: #ffebcc; }
+        .cell.chance .cell-text { color: #d97706; }
+        
+        .cell.fate { background: #ffe6e6; }
+        .cell.fate .cell-text { color: #dc2626; }
+
+        .cell.active { 
+            border: 4px solid var(--monopoly-red); 
+            box-shadow: inset 0 0 12px var(--monopoly-red); 
+            transform: scale(1.08); 
+            z-index: 15 !important;
+            background: #fff0f0 !important;
+        }
+
+        /* 中央控制區 */
+        #center-area {
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center;
+            background: var(--center-bg); 
+            border: 2px solid var(--border-color); 
+            margin: 5px; 
+            padding: 10px 20px;
+            position: relative;
+            text-align: center;
+            z-index: 1;
+        }
+
+        .logo-text {
+            background: var(--monopoly-red); 
+            color: #fff; 
+            padding: 8px 20px;
+            font-size: clamp(18px, 4vmin, 40px); 
+            transform: rotate(-3deg); 
+            border: 3px solid #000; 
+            box-shadow: 5px 5px 0px #000;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        #status-text { 
+            font-size: clamp(14px, 2.5vmin, 24px); 
+            margin-bottom: 10px; 
+            font-weight: bold; 
+            color: #333; 
+            min-height: 3vmin;
+        }
+
+        #dice-container { display: flex; gap: 15px; margin-bottom: 15px; }
+        .dice { 
+            width: clamp(40px, 6vmin, 60px); 
+            height: clamp(40px, 6vmin, 60px); 
+            background: white; color: var(--monopoly-red); 
+            font-size: clamp(20px, 4vmin, 35px); border-radius: 10px; 
+            display: flex; justify-content: center; align-items: center; 
+            border: 3px solid #000; box-shadow: 3px 3px 0px #000; 
+            font-weight: bold;
+        }
+
+        .btn-group { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; z-index: 10; width: 100%;}
+        button { 
+            cursor: pointer; padding: 10px 18px; 
+            font-size: clamp(12px, 1.8vmin, 18px);
+            font-weight: bold; border: 2px solid #000; box-shadow: 3px 3px 0px #000;
+            transition: 0.2s;
+            border-radius: 6px;
+        }
+        button:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0px #000; }
+        button:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0px #000; }
+
+        .btn-settings { background: var(--monopoly-blue); color: white; }
+        .btn-roll { background: var(--monopoly-red); color: white; }
+        .btn-marquee { background: #ffebcc; }
+        .btn-shuffle { background: #eee; }
+        .btn-reset { background: var(--monopoly-purple); color: white; }
+        .btn-history { background: var(--monopoly-yellow); color: #000; }
+
+        /* 設定介面 Modal & 歷史紀錄 Modal */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-content {
+            background: #fff; width: 85%; max-width: 700px; padding: 25px; border-radius: 12px;
+            max-height: 85vh; overflow-y: auto; border: 4px solid #000;
+        }
+        
+        .cloud-section {
+            background: #f0f7ff; padding: 15px; border: 2px dashed var(--monopoly-blue);
+            margin-bottom: 20px; border-radius: 8px; text-align: left;
+        }
+        .code-display {
+            font-size: 22px; color: var(--monopoly-red); letter-spacing: 2px;
+            background: #fff; padding: 5px 15px; border: 2px solid #000; font-family: monospace;
+        }
+
+        textarea { width: 100%; height: 80px; margin: 8px 0 15px 0; border: 2px solid #000; padding: 10px; font-size: 14px; box-sizing: border-box; }
+        select { font-size: 16px; padding: 5px; margin-bottom: 15px; border: 2px solid #000; font-weight: bold; }
+        .modal-footer { text-align: right; margin-top: 10px; border-top: 2px solid #eee; padding-top: 15px; }
+
+        /* 歷史紀錄清單 */
+        #history-list {
+            list-style: none; padding: 0; margin: 0; text-align: left;
+            max-height: 50vh; overflow-y: auto;
+        }
+        #history-list li {
+            padding: 10px; border-bottom: 1px dashed #ccc; font-size: 16px; font-weight: bold;
+        }
+        #history-list li span.time { color: #666; font-size: 12px; margin-right: 10px; font-weight: normal;}
+
+        /* ======== 抽籤結果彈出視窗 ======== */
+        #result-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.75); display: none; justify-content: center; align-items: center; z-index: 2000;
+        }
+        .result-content {
+            background: #fff; width: 80%; max-width: 500px; padding: 40px; border-radius: 20px;
+            text-align: center; border: 6px solid #000; box-shadow: 10px 10px 0px #000;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .result-title { font-size: clamp(24px, 3.5vmin, 40px); font-weight: bold; margin-bottom: 20px; color: #333; }
+        .result-name { font-size: clamp(36px, 7vmin, 80px); font-weight: bold; color: var(--monopoly-blue); margin: 30px 0; word-break: break-word;}
+        .result-text { font-size: clamp(20px, 4vmin, 40px); font-weight: bold; margin: 30px 0; }
+        .btn-close-result {
+            background: var(--monopoly-red); color: white; padding: 12px 30px; font-size: clamp(16px, 2.5vmin, 24px);
+            margin-top: 20px; border: 3px solid #000; box-shadow: 4px 4px 0px #000; cursor: pointer; font-weight: bold;
+        }
+        .btn-close-result:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px #000; }
+        .btn-close-result:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px #000; }
+
+        /* ======== 響應式設計 (RWD) ======== */
+        @media (max-width: 768px), (max-aspect-ratio: 1/1) {
+            #board-container {
+                width: 98vw;
+                height: 90vw; /* 讓版面在手機上偏向方形以騰出更多空間 */
+                max-height: 800px;
+            }
+            #center-area {
+                padding: 10px;
+            }
+            .btn-group button {
+                flex: 1 1 40%; /* 讓按鈕在手機上雙排並列，方便點擊 */
+                padding: 12px 5px;
+            }
+            .modal-content {
+                width: 95%;
+                padding: 15px;
+            }
+            .modal-footer {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+            .modal-footer button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="settings-modal" class="modal-overlay">
+    <div class="modal-content">
+        <h2 data-i18n="modalTitle">🛠️ 系統設定</h2>
+
+        <div class="cloud-section">
+            <label data-i18n="cloudTitle"><b>☁️ 雲端同步與匯入 (Google Sheets)</b></label><br>
+            <div style="margin: 10px 0;">
+                <input type="text" id="input-cloud-code" data-i18n-placeholder="cloudPlaceholder" placeholder="輸入5位代碼" style="width: 120px; padding: 8px; border: 2px solid #000;">
+                <button onclick="loadFromCloud()" class="btn-settings" style="padding: 7px 15px; box-shadow: 2px 2px 0#000;" data-i18n="btnLoad">讀取存檔</button>
+            </div>
+            <div id="display-new-code" style="margin-top: 10px; display:none; background: #fff; padding: 10px; border: 1px solid #ccc;">
+                <span data-i18n="yourCode">您的存取代碼：</span><span class="code-display" id="new-code-text">-----</span>
+                <p style="font-size: 12px; color: #666; margin-top:5px;" data-i18n="codeHint">* 請記下代碼，以便日後讀取資料。</p>
+            </div>
+        </div>
+        
+        <label data-i18n="langLabel"><b>🌐 介面語言 / Language</b></label><br>
+        <select id="lang-select" onchange="changeLanguage(this.value)">
+            <option value="zh">繁體中文</option>
+            <option value="en">English</option>
+        </select><br>
+
+        <label data-i18n="labelStudents"><b>1. 匯入名單</b> (格式：學號,姓名。也可直接貼上名字)</label>
+        <textarea id="input-students"></textarea>
+        
+        <label data-i18n="labelChance"><b>2. 自訂【機會】內容</b> (每行一項)</label>
+        <textarea id="input-chance"></textarea>
+        
+        <label data-i18n="labelFate"><b>3. 自訂【命運】內容</b> (每行一項)</label>
+        <textarea id="input-fate"></textarea>
+        
+        <div class="modal-footer">
+            <button onclick="toggleModal(false)" style="background: #ccc; box-shadow:none;" data-i18n="btnCancel">取消返回</button>
+            <button onclick="saveAndApplyLocal()" style="background: var(--monopoly-blue); color: #fff;" data-i18n="btnApply">直接套用 (不備份)</button>
+            <button onclick="saveToCloud()" style="background: var(--monopoly-green); color: #fff;" data-i18n="btnSave">儲存並備份至雲端</button>
+        </div>
+    </div>
+</div>
+
+<div id="history-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 500px; text-align: center;">
+        <h2 data-i18n="historyTitle">📜 抽籤歷史紀錄</h2>
+        <ul id="history-list">
+            <li style="text-align: center; color: #666;" data-i18n="historyEmpty">目前尚無紀錄</li>
+        </ul>
+        <div class="modal-footer" style="justify-content: center; display: flex;">
+            <button class="btn-close-result" onclick="toggleHistory(false)" data-i18n="btnConfirm">確認</button>
+        </div>
+    </div>
+</div>
+
+<div id="result-modal">
+    <div class="result-content" id="result-box">
+        <div class="result-title" id="result-title"></div>
+        <div id="result-display"></div>
+        <button class="btn-close-result" onclick="closeResult()" data-i18n="btnConfirm">確認</button>
+    </div>
+</div>
+
+<div id="board-container">
+    <div id="center-area">
+        <div class="logo-text" data-i18n="logo">大富翁抽籤</div>
+        <div id="status-text" data-i18n="ready">準備好了嗎？</div>
+        
+        <div id="dice-container">
+            <div class="dice" id="dice1">?</div>
+            <div class="dice" id="dice2">?</div>
+        </div>
+        
+        <div class="btn-group">
+            <button class="btn-roll" onclick="rollDice()" data-i18n="btnRoll">🎲 擲骰子</button>
+            <button class="btn-marquee" onclick="startMarquee()" data-i18n="btnQuick">⚡ 快速抽籤</button>
+            <button class="btn-shuffle" onclick="shuffleBoard()" data-i18n="btnShuffle">🔄 大風吹</button>
+            <button class="btn-reset" onclick="resetBoard()" data-i18n="btnReset">↩️ 順序重設</button>
+            <button class="btn-history" onclick="toggleHistory(true)" data-i18n="btnHistory">📜 歷史紀錄</button>
+            <button class="btn-settings" onclick="toggleModal(true)" data-i18n="btnSettings">⚙️ 系統設定</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 重要：請在此貼上你的 Google Apps Script 部署網址 ---
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbz_wBUiEzEU2covgHiBZWOyX_a2sqQD5Dacpn5QgHO3Ri_QxR-GGDlyQ00YJr_XLMHO/exec'; 
+
+    const i18n = {
+        zh: {
+            modalTitle: "🛠️ 系統設定",
+            cloudTitle: "<b>☁️ 雲端同步與匯入 (Google Sheets)</b>",
+            btnLoad: "讀取存檔",
+            yourCode: "您的存取代碼：",
+            codeHint: "* 請記下代碼，以便日後讀取資料。",
+            cloudPlaceholder: "輸入5位代碼",
+            langLabel: "<b>🌐 介面語言 / Language</b>",
+            labelStudents: "<b>1. 匯入名單</b> (格式：學號,姓名。也可直接貼上名字)",
+            labelChance: "<b>2. 自訂【機會】內容</b> (每行一項)",
+            labelFate: "<b>3. 自訂【命運】內容</b> (每行一項)",
+            btnCancel: "取消返回",
+            btnApply: "直接套用 (不備份)",
+            btnSave: "儲存並備份至雲端",
+            logo: "大富翁抽籤",
+            ready: "準備好了嗎？",
+            btnRoll: "🎲 擲骰子",
+            btnQuick: "⚡ 快速抽籤",
+            btnShuffle: "🔄 大風吹",
+            btnReset: "↩️ 順序重設",
+            btnSettings: "⚙️ 系統設定",
+            btnHistory: "📜 歷史紀錄",
+            historyTitle: "📜 抽籤歷史紀錄",
+            historyEmpty: "目前尚無紀錄",
+            alertCount: "人數必須介於 8 到 40 人之間！",
+            statusSaved: "✅ 設定已更新！",
+            statusWinner: "📍 抽中幸運兒",
+            statusChance: "🎁 機會時刻",
+            statusFate: "⚡ 命運降臨",
+            statusShuffle: "🔄 大風吹，吹亂所有位置！",
+            mapChance: "❓<br>機會",
+            mapFate: "❗<br>命運",
+            msgSaveWait: "⏳ 正在備份至雲端...",
+            msgSaveSuccess: "✅ 儲存成功！代碼：",
+            msgSaveFail: "❌ 雲端同步失敗，已轉為本機套用。",
+            msgSaveTimeout: "❌ 連線超時！已轉為本機套用。",
+            msgLoadWait: "⏳ 正在抓取雲端資料...",
+            msgLoadSuccess: "✅ 雲端資料匯入完成！",
+            msgLoadFail: "❌ 找不到此代碼或讀取失敗",
+            alertCodeLen: "請輸入 5 位代碼",
+            btnConfirm: "確認",
+            titleWinner: "🎉 恭喜幸運兒！",
+            titleChance: "🎁 機會時刻",
+            titleFate: "⚡ 命運降臨"
+        },
+        en: {
+            modalTitle: "🛠️ System Settings",
+            cloudTitle: "<b>☁️ Cloud Sync (Google Sheets)</b>",
+            btnLoad: "Load Data",
+            yourCode: "Your Save Code: ",
+            codeHint: "* Please save this code to load your data later.",
+            cloudPlaceholder: "5-digit code",
+            langLabel: "<b>🌐 Interface Language</b>",
+            labelStudents: "<b>1. Player List</b> (ID,Name or just Names)",
+            labelChance: "<b>2. [Chance] Events</b>",
+            labelFate: "<b>3. [Fate] Events</b>",
+            btnCancel: "Cancel",
+            btnApply: "Apply Locally",
+            btnSave: "Save & Backup",
+            logo: "Monopoly Picker",
+            ready: "Ready to play?",
+            btnRoll: "🎲 Roll Dice",
+            btnQuick: "⚡ Quick Pick",
+            btnShuffle: "🔄 Shuffle",
+            btnReset: "↩️ Reset",
+            btnSettings: "⚙️ Settings",
+            btnHistory: "📜 History",
+            historyTitle: "📜 Draw History",
+            historyEmpty: "No records yet",
+            alertCount: "Player count must be 8-40!",
+            statusSaved: "✅ Settings Updated!",
+            statusWinner: "📍 Lucky Winner",
+            statusChance: "🎁 Chance!",
+            statusFate: "⚡ Fate!",
+            statusShuffle: "🔄 Positions Shuffled!",
+            mapChance: "❓<br>Chance",
+            mapFate: "❗<br>Fate",
+            msgSaveWait: "⏳ Saving to cloud...",
+            msgSaveSuccess: "✅ Saved! Code: ",
+            msgSaveFail: "❌ Cloud sync failed. Applied locally.",
+            msgSaveTimeout: "❌ Connection timeout! Applied locally.",
+            msgLoadWait: "⏳ Loading cloud data...",
+            msgLoadSuccess: "✅ Cloud data loaded!",
+            msgLoadFail: "❌ Invalid code or load failed",
+            alertCodeLen: "Please enter a 5-digit code",
+            btnConfirm: "OK",
+            titleWinner: "🎉 Winner!",
+            titleChance: "🎁 Chance",
+            titleFate: "⚡ Fate"
+        }
+    };
+
+    let currentLang = 'zh';
+    let originalStudents = Array.from({length: 24}, (_, i) => ({ id: i+1, name: `學生${i+1}` }));
+    let students = JSON.parse(JSON.stringify(originalStudents));
+    let chanceList = ["下一位抽到的同學可免答並直接加1分", "下一位抽到的同學可指定同學代答", "下一位抽到的同學答對，全班加1分", "下一位抽到的同學回答時，可獲得提示"];
+    let fateList = ["下一位抽到的同學需使用英文作答", "下一位抽到的同學答錯，全班扣1分", "下一位抽到的同學需邊跳邊回答", "下一位抽到的同學答錯，需扣雙倍分數"];
+    
+    let mapData = [];
+    let historyData = []; // 新增歷史紀錄陣列
+    let currentIndex = 0;
+    let isAnimating = false;
+    let boardW = 0, boardH = 0;
+
+    document.getElementById('input-students').value = originalStudents.map(s => `${s.id},${s.name}`).join('\n');
+    document.getElementById('input-chance').value = chanceList.join('\n');
+    document.getElementById('input-fate').value = fateList.join('\n');
+
+    function toggleModal(show) {
+        document.getElementById('settings-modal').style.display = show ? 'flex' : 'none';
+    }
+
+    function toggleHistory(show) {
+        const modal = document.getElementById('history-modal');
+        const list = document.getElementById('history-list');
+        
+        if (show) {
+            list.innerHTML = '';
+            if (historyData.length === 0) {
+                list.innerHTML = `<li style="text-align: center; color: #666;">${i18n[currentLang].historyEmpty}</li>`;
+            } else {
+                historyData.forEach(entry => {
+                    let li = document.createElement('li');
+                    li.innerHTML = `<span class="time">${entry.time}</span> ${entry.text}`;
+                    list.appendChild(li);
+                });
+            }
+            modal.style.display = 'flex';
+        } else {
+            modal.style.display = 'none';
+        }
+    }
+
+    function saveSettings() {
+        const rawStudents = document.getElementById('input-students').value.trim().split('\n');
+        let parsed = [];
+        
+        rawStudents.forEach(line => {
+            let tLine = line.trim();
+            if(tLine === '') return;
+            if(tLine.includes(',')) {
+                let parts = tLine.split(',');
+                parsed.push({ id: parts[0].trim(), name: parts[1].trim() || parts[0].trim() });
+            } else {
+                parsed.push({ id: tLine, name: tLine }); 
+            }
+        });
+        
+        if(parsed.length < 8 || parsed.length > 40) {
+            alert(i18n[currentLang].alertCount);
+            return false;
+        }
+
+        originalStudents = JSON.parse(JSON.stringify(parsed));
+        students = JSON.parse(JSON.stringify(originalStudents));
+        chanceList = document.getElementById('input-chance').value.trim().split('\n').filter(l => l);
+        fateList = document.getElementById('input-fate').value.trim().split('\n').filter(l => l);
+
+        currentIndex = 0;
+        historyData = []; // 重新設定時清空歷史紀錄
+        generateMap();
+        renderBoard();
+        return true;
+    }
+    
+    function saveAndApplyLocal() {
+        if (saveSettings()) {
+            document.getElementById('status-text').innerText = i18n[currentLang].statusSaved;
+            toggleModal(false); 
+        }
+    }
+
+    async function saveToCloud() {
+        if (!saveSettings()) return;
+
+        const statusText = document.getElementById('status-text');
+        statusText.innerText = i18n[currentLang].msgSaveWait;
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+        try {
+            const response = await fetch(GAS_URL, {
+                method: 'POST',
+                redirect: 'follow',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                    students: originalStudents,
+                    chance: chanceList,
+                    fate: fateList
+                }),
+                signal: controller.signal
+            });
+            
+            const result = await response.json();
+            clearTimeout(timeoutId);
+
+            if (result.result === 'success') {
+                document.getElementById('display-new-code').style.display = 'block';
+                document.getElementById('new-code-text').innerText = result.code;
+                statusText.innerText = i18n[currentLang].msgSaveSuccess + result.code;
+                alert(i18n[currentLang].msgSaveSuccess + result.code);
+                toggleModal(false); 
+            } else {
+                throw new Error("Result is not success");
+            }
+        } catch (e) {
+            clearTimeout(timeoutId);
+            console.error(e);
+            if (e.name === 'AbortError') {
+                alert(i18n[currentLang].msgSaveTimeout);
+                statusText.innerText = i18n[currentLang].msgSaveTimeout;
+            } else {
+                alert(i18n[currentLang].msgSaveFail);
+                statusText.innerText = i18n[currentLang].msgSaveFail;
+            }
+            toggleModal(false); 
+        }
+    }
+
+    async function loadFromCloud() {
+        const code = document.getElementById('input-cloud-code').value.trim();
+        if (code.length !== 5) {
+            alert(i18n[currentLang].alertCodeLen);
+            return;
+        }
+
+        const statusText = document.getElementById('status-text');
+        statusText.innerText = i18n[currentLang].msgLoadWait;
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+        try {
+            const response = await fetch(`${GAS_URL}?code=${code}`, {
+                method: 'GET',
+                redirect: 'follow',
+                signal: controller.signal
+            });
+            const result = await response.json();
+            clearTimeout(timeoutId);
+
+            if (result.result === 'success') {
+                originalStudents = result.students;
+                students = JSON.parse(JSON.stringify(originalStudents));
+                chanceList = result.chance;
+                fateList = result.fate;
+
+                document.getElementById('input-students').value = originalStudents.map(s => `${s.id},${s.name}`).join('\n');
+                document.getElementById('input-chance').value = chanceList.join('\n');
+                document.getElementById('input-fate').value = fateList.join('\n');
+
+                currentIndex = 0;
+                historyData = [];
+                generateMap();
+                renderBoard();
+                statusText.innerText = i18n[currentLang].msgLoadSuccess;
+                toggleModal(false);
+            } else {
+                alert(i18n[currentLang].msgLoadFail);
+                statusText.innerText = i18n[currentLang].msgLoadFail;
+            }
+        } catch (e) {
+            clearTimeout(timeoutId);
+            console.error(e);
+            if (e.name === 'AbortError') {
+                alert(i18n[currentLang].msgSaveTimeout);
+                statusText.innerText = i18n[currentLang].msgSaveTimeout;
+            } else {
+                alert(i18n[currentLang].msgLoadFail);
+                statusText.innerText = i18n[currentLang].msgLoadFail;
+            }
+        }
+    }
+
+    function generateMap() {
+        let N = students.length;
+        let specialCount = 4;
+        let totalCells = N + specialCount;
+        if (totalCells % 2 !== 0) { specialCount++; totalCells++; }
+
+        let targetSum = (totalCells + 4) / 2;
+        boardW = Math.round(targetSum * 16 / 25);
+        boardH = targetSum - boardW;
+        if (boardH < 3) { boardH = 3; boardW = targetSum - 3; }
+
+        mapData = [];
+        let sIdx = 0;
+        let specialIndices = [0, boardW - 1, boardW + boardH - 2, 2 * boardW + boardH - 3];
+        const colors = ['#fdf6e3', '#e0f7fa', '#fce4ec', '#fff3e0', '#e8f5e9', '#fff9c4'];
+        
+        for (let i = 0; i < totalCells; i++) {
+            if (specialIndices.includes(i)) {
+                let isChance = i === specialIndices[0] || i === specialIndices[2];
+                mapData.push({ 
+                    type: isChance ? 'chance' : 'fate', 
+                    text: isChance ? i18n[currentLang].mapChance : i18n[currentLang].mapFate 
+                });
+            } else {
+                if(students[sIdx]) {
+                    let colorIdx = sIdx % colors.length;
+                    mapData.push({ 
+                        type: 'student', 
+                        name: students[sIdx].name, 
+                        id: students[sIdx].id,
+                        color: colors[colorIdx] 
+                    });
+                    sIdx++;
+                } else {
+                    mapData.push({ type: 'fate', text: i18n[currentLang].mapFate });
+                }
+            }
+        }
+    }
+
+    function getGridPos(i, W, H) {
+        if (i < W) return { col: i + 1, row: 1 };
+        if (i < W + H - 2) return { col: W, row: i - W + 2 };
+        if (i < 2 * W + H - 2) return { col: W - (i - (W + H - 2)), row: H };
+        return { col: 1, row: H - 1 - (i - (2 * W + H - 2)) };
+    }
+
+    function renderBoard() {
+        const board = document.getElementById('board-container');
+        board.style.gridTemplateColumns = `repeat(${boardW}, 1fr)`;
+        board.style.gridTemplateRows = `repeat(${boardH}, 1fr)`;
+        
+        const centerArea = document.getElementById('center-area');
+        centerArea.style.gridColumn = `2 / ${boardW}`;
+        centerArea.style.gridRow = `2 / ${boardH}`;
+
+        document.querySelectorAll('.cell').forEach(e => e.remove());
+        mapData.forEach((data, i) => {
+            const cell = document.createElement('div');
+            cell.id = `cell-${i}`;
+            cell.className = `cell ${data.type}`;
+            
+            if (data.type === 'student') {
+                cell.style.backgroundColor = data.color;
+                cell.innerHTML = `<div class="cell-text">${data.name}</div>`;
+            } else {
+                cell.innerHTML = `<div class="cell-text">${data.text}</div>`;
+            }
+            
+            let pos = getGridPos(i, boardW, boardH);
+            cell.style.gridColumn = pos.col;
+            cell.style.gridRow = pos.row;
+            board.appendChild(cell);
+        });
+        updatePos();
+    }
+
+    function updatePos() {
+        document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
+        const activeCell = document.getElementById(`cell-${currentIndex}`);
+        if(activeCell) activeCell.classList.add('active');
+    }
+
+function rollDice() {
+        if (isAnimating) return;
+        isAnimating = true;
+        playSound('click'); // 🎵 播放點擊音效
+        closeResult(); 
+        let s1 = Math.floor(Math.random() * 6) + 1;
+        let s2 = Math.floor(Math.random() * 6) + 1;
+        let count = 0;
+        let timer = setInterval(() => {
+            document.getElementById('dice1').innerText = Math.floor(Math.random() * 6) + 1;
+            document.getElementById('dice2').innerText = Math.floor(Math.random() * 6) + 1;
+            playSound('move'); // 🎵 擲骰子時發出快速的跳動聲
+            if(count++ > 10) {
+                clearInterval(timer);
+                document.getElementById('dice1').innerText = s1;
+                document.getElementById('dice2').innerText = s2;
+                move(s1 + s2);
+            }
+        }, 50);
+    }
+
+    function startMarquee() {
+        if (isAnimating) return;
+        playSound('click');
+        isAnimating = true;
+        closeResult();
+        move(Math.floor(Math.random() * mapData.length) + mapData.length, true);
+    }
+
+    function move(steps, isMarquee = false) {
+        if (steps <= 0) { land(); return; }
+        playSound('move');
+        currentIndex = (currentIndex + 1) % mapData.length;
+        updatePos();
+        setTimeout(() => move(steps - 1, isMarquee), isMarquee ? 40 : 150);
+    }
+
+    function land() {
+        const data = mapData[currentIndex];
+        const modal = document.getElementById('result-modal');
+        const box = document.getElementById('result-box');
+        const title = document.getElementById('result-title');
+        const display = document.getElementById('result-display');
+        if (data.type === 'student') {
+            playSound('win'); // 🎵 播放抽中歡呼音效
+            
+            // ... (保留原本的狀態更新、歷史紀錄與 confetti 紙吹雪程式碼)
+            
+        } else {
+            playSound('magic'); // 🎵 播放機會命運的魔法音效
+        modal.style.display = 'flex';
+        
+        let historyEntry = { time: new Date().toLocaleTimeString() };
+
+        if (data.type === 'student') {
+            document.getElementById('status-text').innerText = i18n[currentLang].statusWinner;
+            title.innerText = i18n[currentLang].titleWinner;
+            title.style.color = '#333';
+            display.innerHTML = `<div class="result-name">${data.name}</div>`;
+            box.style.borderColor = 'var(--monopoly-blue)';
+            
+            // 寫入歷史紀錄
+            historyEntry.text = `📍 幸運兒：<span style="color:var(--monopoly-blue);">${data.name}</span>`;
+            
+            // 呼叫紙吹雪特效 (確保層級蓋過彈出視窗)
+            confetti({
+                particleCount: 150,
+                spread: 80,
+                origin: { y: 0.6 },
+                zIndex: 3000
+            });
+            
+        } else {
+            const list = data.type === 'chance' ? chanceList : fateList;
+            const content = list[Math.floor(Math.random() * list.length)];
+            document.getElementById('status-text').innerText = data.type === 'chance' ? i18n[currentLang].statusChance : i18n[currentLang].statusFate;
+            
+            title.innerText = data.type === 'chance' ? i18n[currentLang].titleChance : i18n[currentLang].titleFate;
+            const color = data.type === 'chance' ? '#d97706' : '#dc2626';
+            title.style.color = color;
+            display.innerHTML = `<div class="result-text" style="color:${color}">${content}</div>`;
+            box.style.borderColor = color;
+            
+            // 寫入歷史紀錄
+            const typeStr = data.type === 'chance' ? '🎁 機會' : '⚡ 命運';
+            historyEntry.text = `<span style="color:${color}">${typeStr}：${content}</span>`;
+        }
+        
+        // 將紀錄加到最前面
+        historyData.unshift(historyEntry);
+    }
+
+    function closeResult() {
+        document.getElementById('result-modal').style.display = 'none';
+        isAnimating = false;
+    }
+
+    function shuffleBoard() {
+        if (isAnimating) return;
+        playSound('shuffle');
+        closeResult();
+        students.sort(() => Math.random() - 0.5);
+        generateMap();
+        renderBoard();
+        document.getElementById('status-text').innerText = i18n[currentLang].statusShuffle;
+    }
+
+    function resetBoard() {
+        if (isAnimating) return;
+        playSound('click');
+        closeResult();
+        students = JSON.parse(JSON.stringify(originalStudents));
+        currentIndex = 0;
+        generateMap();
+        renderBoard();
+        document.getElementById('status-text').innerText = i18n[currentLang].ready;
+    }
+
+    function changeLanguage(lang) {
+        currentLang = lang;
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (i18n[lang][key]) el.innerHTML = i18n[lang][key];
+        });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            if (i18n[lang][key]) el.placeholder = i18n[lang][key];
+        });
+        generateMap(); renderBoard();
+    }
+const sounds = {
+        click: new Audio('https://actions.google.com/sounds/v1/ui/button_click.ogg'),
+        move: new Audio('https://actions.google.com/sounds/v1/ui/wood_click.ogg'),
+        win: new Audio('https://actions.google.com/sounds/v1/cartoon/cartoon_success_fanfare.ogg'),
+        magic: new Audio('https://actions.google.com/sounds/v1/magic/fairy_wand_magic.ogg'),
+        shuffle: new Audio('https://actions.google.com/sounds/v1/cartoon/slip_and_crash.ogg')
+    };
+
+    // 調整部分音效大小，避免聲音太刺耳
+    sounds.move.volume = 0.3;
+    sounds.click.volume = 0.6;
+    sounds.win.volume = 0.8;
+
+    function playSound(type) {
+        if (sounds[type]) {
+            sounds[type].currentTime = 0; // 歸零，讓音效可以快速連續播放
+            sounds[type].play().catch(e => console.log("瀏覽器攔截了自動播放:", e));
+        }
+    }
+    // 初始化
+    changeLanguage('zh');
+</script>
+</body>
+</html>
