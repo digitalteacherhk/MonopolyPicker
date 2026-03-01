@@ -27,7 +27,6 @@
             align-items: center;
             min-height: 100vh;
             overflow: hidden;
-            /* 避免手機雙擊放大 */
             touch-action: manipulation;
         }
 
@@ -219,13 +218,12 @@
         @media (max-width: 768px), (max-aspect-ratio: 1/1) {
             #board-container {
                 width: 98vw;
-                height: 90vw; /* 讓版面在手機上偏向方形以騰出更多空間 */
+                height: 90vw;
                 max-height: 800px;
             }
             #center-area { padding: 10px; }
             .btn-group button {
                 flex: 1 1 40%;
-                /* 讓按鈕在手機上雙排並列，方便點擊 */
                 padding: 12px 5px;
             }
             .modal-content { width: 95%; padding: 15px; }
@@ -321,99 +319,40 @@
 </div>
 
 <script>
-    // --- 重要：請在此貼上你的 Google Apps Script 部署網址 ---
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbz_wBUiEzEU2covgHiBZWOyX_a2sqQD5Dacpn5QgHO3Ri_QxR-GGDlyQ00YJr_XLMHO/exec';
     
     const i18n = {
         zh: {
-            modalTitle: "🛠️ 系統設定",
-            cloudTitle: "<b>☁️ 雲端同步與匯入 (Google Sheets)</b>",
-            btnLoad: "讀取存檔",
-            yourCode: "您的存取代碼：",
-            codeHint: "* 請記下代碼，以便日後讀取資料。",
-            cloudPlaceholder: "輸入5位代碼",
-            langLabel: "<b>🌐 介面語言 / Language</b>",
-            labelStudents: "<b>1. 匯入名單</b> (格式：學號,姓名。也可直接貼上名字)",
-            labelChance: "<b>2. 自訂【機會】內容</b> (每行一項)",
-            labelFate: "<b>3. 自訂【命運】內容</b> (每行一項)",
-            btnCancel: "取消返回",
-            btnApply: "直接套用 (不備份)",
-            btnSave: "儲存並備份至雲端",
-            logo: "大富翁抽籤",
-            ready: "準備好了嗎？",
-            btnRoll: "🎲 擲骰子",
-            btnQuick: "⚡ 快速抽籤",
-            btnShuffle: "🔄 大風吹",
-            btnReset: "↩️ 順序重設",
-            btnSettings: "⚙️ 系統設定",
-            btnHistory: "📜 歷史紀錄",
-            historyTitle: "📜 抽籤歷史紀錄",
-            historyEmpty: "目前尚無紀錄",
-            alertCount: "人數必須介於 8 到 40 人之間！",
-            statusSaved: "✅ 設定已更新！",
-            statusWinner: "📍 抽中幸運兒",
-            statusChance: "🎁 機會時刻",
-            statusFate: "⚡ 命運降臨",
-            statusShuffle: "🔄 大風吹，吹亂所有位置！",
-            mapChance: "❓<br>機會",
-            mapFate: "❗<br>命運",
-            msgSaveWait: "⏳ 正在備份至雲端...",
-            msgSaveSuccess: "✅ 儲存成功！代碼：",
-            msgSaveFail: "❌ 雲端同步失敗，已轉為本機套用。",
-            msgSaveTimeout: "❌ 連線超時！已轉為本機套用。",
-            msgLoadWait: "⏳ 正在抓取雲端資料...",
-            msgLoadSuccess: "✅ 雲端資料匯入完成！",
-            msgLoadFail: "❌ 找不到此代碼或讀取失敗",
-            alertCodeLen: "請輸入 5 位代碼",
-            btnConfirm: "確認",
-            titleWinner: "🎉 恭喜幸運兒！",
-            titleChance: "🎁 機會時刻",
-            titleFate: "⚡ 命運降臨"
+            modalTitle: "🛠️ 系統設定", cloudTitle: "<b>☁️ 雲端同步與匯入 (Google Sheets)</b>", btnLoad: "讀取存檔",
+            yourCode: "您的存取代碼：", codeHint: "* 請記下代碼，以便日後讀取資料。", cloudPlaceholder: "輸入5位代碼",
+            langLabel: "<b>🌐 介面語言 / Language</b>", labelStudents: "<b>1. 匯入名單</b> (格式：學號,姓名。也可直接貼上名字)",
+            labelChance: "<b>2. 自訂【機會】內容</b> (每行一項)", labelFate: "<b>3. 自訂【命運】內容</b> (每行一項)",
+            btnCancel: "取消返回", btnApply: "直接套用 (不備份)", btnSave: "儲存並備份至雲端",
+            logo: "大富翁抽籤", ready: "準備好了嗎？", btnRoll: "🎲 擲骰子", btnQuick: "⚡ 快速抽籤",
+            btnShuffle: "🔄 大風吹", btnReset: "↩️ 順序重設", btnSettings: "⚙️ 系統設定", btnHistory: "📜 歷史紀錄",
+            historyTitle: "📜 抽籤歷史紀錄", historyEmpty: "目前尚無紀錄", alertCount: "人數必須介於 8 到 40 人之間！",
+            statusSaved: "✅ 設定已更新！", statusWinner: "📍 抽中幸運兒", statusChance: "🎁 機會時刻",
+            statusFate: "⚡ 命運降臨", statusShuffle: "🔄 大風吹，吹亂所有位置！", mapChance: "❓<br>機會", mapFate: "❗<br>命運",
+            msgSaveWait: "⏳ 正在備份至雲端...", msgSaveSuccess: "✅ 儲存成功！代碼：", msgSaveFail: "❌ 雲端同步失敗，已轉為本機套用。",
+            msgSaveTimeout: "❌ 連線超時！已轉為本機套用。", msgLoadWait: "⏳ 正在抓取雲端資料...", msgLoadSuccess: "✅ 雲端資料匯入完成！",
+            msgLoadFail: "❌ 找不到此代碼或讀取失敗", alertCodeLen: "請輸入 5 位代碼", btnConfirm: "確認",
+            titleWinner: "🎉 恭喜幸運兒！", titleChance: "🎁 機會時刻", titleFate: "⚡ 命運降臨"
         },
         en: {
-            modalTitle: "🛠️ System Settings",
-            cloudTitle: "<b>☁️ Cloud Sync (Google Sheets)</b>",
-            btnLoad: "Load Data",
-            yourCode: "Your Save Code: ",
-            codeHint: "* Please save this code to load your data later.",
-            cloudPlaceholder: "5-digit code",
-            langLabel: "<b>🌐 Interface Language</b>",
-            labelStudents: "<b>1. Player List</b> (ID,Name or just Names)",
-            labelChance: "<b>2. [Chance] Events</b>",
-            labelFate: "<b>3. [Fate] Events</b>",
-            btnCancel: "Cancel",
-            btnApply: "Apply Locally",
-            btnSave: "Save & Backup",
-            logo: "Monopoly Picker",
-            ready: "Ready to play?",
-            btnRoll: "🎲 Roll Dice",
-            btnQuick: "⚡ Quick Pick",
-            btnShuffle: "🔄 Shuffle",
-            btnReset: "↩️ Reset",
-            btnSettings: "⚙️ Settings",
-            btnHistory: "📜 History",
-            historyTitle: "📜 Draw History",
-            historyEmpty: "No records yet",
-            alertCount: "Player count must be 8-40!",
-            statusSaved: "✅ Settings Updated!",
-            statusWinner: "📍 Lucky Winner",
-            statusChance: "🎁 Chance!",
-            statusFate: "⚡ Fate!",
-            statusShuffle: "🔄 Positions Shuffled!",
-            mapChance: "❓<br>Chance",
-            mapFate: "❗<br>Fate",
-            msgSaveWait: "⏳ Saving to cloud...",
-            msgSaveSuccess: "✅ Saved! Code: ",
-            msgSaveFail: "❌ Cloud sync failed. Applied locally.",
-            msgSaveTimeout: "❌ Connection timeout! Applied locally.",
-            msgLoadWait: "⏳ Loading cloud data...",
-            msgLoadSuccess: "✅ Cloud data loaded!",
-            msgLoadFail: "❌ Invalid code or load failed",
-            alertCodeLen: "Please enter a 5-digit code",
-            btnConfirm: "OK",
-            titleWinner: "🎉 Winner!",
-            titleChance: "🎁 Chance",
-            titleFate: "⚡ Fate"
+            modalTitle: "🛠️ System Settings", cloudTitle: "<b>☁️ Cloud Sync (Google Sheets)</b>", btnLoad: "Load Data",
+            yourCode: "Your Save Code: ", codeHint: "* Please save this code to load your data later.", cloudPlaceholder: "5-digit code",
+            langLabel: "<b>🌐 Interface Language</b>", labelStudents: "<b>1. Player List</b> (ID,Name or just Names)",
+            labelChance: "<b>2. [Chance] Events</b>", labelFate: "<b>3. [Fate] Events</b>",
+            btnCancel: "Cancel", btnApply: "Apply Locally", btnSave: "Save & Backup",
+            logo: "Monopoly Picker", ready: "Ready to play?", btnRoll: "🎲 Roll Dice", btnQuick: "⚡ Quick Pick",
+            btnShuffle: "🔄 Shuffle", btnReset: "↩️ Reset", btnSettings: "⚙️ Settings", btnHistory: "📜 History",
+            historyTitle: "📜 Draw History", historyEmpty: "No records yet", alertCount: "Player count must be 8-40!",
+            statusSaved: "✅ Settings Updated!", statusWinner: "📍 Lucky Winner", statusChance: "🎁 Chance!",
+            statusFate: "⚡ Fate!", statusShuffle: "🔄 Positions Shuffled!", mapChance: "❓<br>Chance", mapFate: "❗<br>Fate",
+            msgSaveWait: "⏳ Saving to cloud...", msgSaveSuccess: "✅ Saved! Code: ", msgSaveFail: "❌ Cloud sync failed. Applied locally.",
+            msgSaveTimeout: "❌ Connection timeout! Applied locally.", msgLoadWait: "⏳ Loading cloud data...", msgLoadSuccess: "✅ Cloud data loaded!",
+            msgLoadFail: "❌ Invalid code or load failed", alertCodeLen: "Please enter a 5-digit code", btnConfirm: "OK",
+            titleWinner: "🎉 Winner!", titleChance: "🎁 Chance", titleFate: "⚡ Fate"
         }
     };
 
@@ -429,24 +368,53 @@
     let isAnimating = false;
     let boardW = 0, boardH = 0;
 
-    // --- 新增：音效設定 ---
+    // ==========================================
+    // 音效系統設定 (對應本地 ./sounds 資料夾)
+    // ==========================================
     const sounds = {
-        click: new Audio('https://actions.google.com/sounds/v1/ui/button_click.ogg'),
-        roll: new Audio('https://actions.google.com/sounds/v1/foley/rolling_dice.ogg'),
-        step: new Audio('https://actions.google.com/sounds/v1/ui/pop.ogg'),
-        win: new Audio('https://actions.google.com/sounds/v1/crowds/crowd_cheer_med.ogg'),
-        fate: new Audio('https://actions.google.com/sounds/v1/cartoon/mystery_chime.ogg')
+        click: new Audio('./sounds/click.mp3'),
+        roll: new Audio('./sounds/roll.mp3'),
+        step: new Audio('./sounds/step.mp3'),
+        win: new Audio('./sounds/win.mp3'),
+        fate: new Audio('./sounds/fate.mp3'),
+        bgm: new Audio('./sounds/bgm.mp3')
     };
 
-    // 預載入音效以減少延遲
-    Object.values(sounds).forEach(audio => audio.load());
+    // 背景音樂設定
+    sounds.bgm.loop = true;
+    sounds.bgm.volume = 0.3; // 建議設為 0.3 以免蓋過說話聲
 
-    function playSound(type) {
-        if (!sounds[type]) return;
-        sounds[type].currentTime = 0; // 重置時間，允許連續點擊/播放
-        sounds[type].play().catch(e => console.log('音效播放遭阻擋:', e));
+    // 播放音效輔助函式
+    function playSfx(name) {
+        if(sounds[name]) {
+            sounds[name].currentTime = 0; // 重置時間，允許連續播放
+            sounds[name].play().catch(e => console.log("播放被阻擋:", e));
+        }
     }
-    // ------------------------
+
+    // 解鎖瀏覽器音訊限制 (關鍵：使用者必須點擊一下網頁才能有聲音)
+    function unlockAudio() {
+        Object.values(sounds).forEach(audio => {
+            if (audio !== sounds.bgm) { // 除了 BGM 外，其他音效播一下即停
+                audio.play().then(() => {
+                    audio.pause();
+                    audio.currentTime = 0;
+                }).catch(e => {});
+            }
+        });
+        
+        sounds.bgm.play().catch(e => console.log("BGM 播放被阻擋:", e));
+        
+        // 解鎖成功後移除監聽器
+        document.removeEventListener('click', unlockAudio);
+        document.removeEventListener('touchstart', unlockAudio);
+    }
+    
+    // 監聽網頁第一次互動
+    document.addEventListener('click', unlockAudio);
+    document.addEventListener('touchstart', unlockAudio);
+    // ==========================================
+
 
     document.getElementById('input-students').value = originalStudents.map(s => `${s.id},${s.name}`).join('\n');
     document.getElementById('input-chance').value = chanceList.join('\n');
@@ -699,8 +667,8 @@
 
     function rollDice() {
         if (isAnimating) return;
-        playSound('click'); // 音效：按鈕點擊
-        playSound('roll');  // 音效：擲骰子
+        playSfx('click'); // 點擊音效
+        playSfx('roll');  // 擲骰子音效
         isAnimating = true;
         closeResult(); 
         let s1 = Math.floor(Math.random() * 6) + 1;
@@ -720,7 +688,7 @@
 
     function startMarquee() {
         if (isAnimating) return;
-        playSound('click'); // 音效：按鈕點擊
+        playSfx('click'); // 點擊音效
         isAnimating = true;
         closeResult();
         move(Math.floor(Math.random() * mapData.length) + mapData.length, true);
@@ -729,7 +697,7 @@
     function move(steps, isMarquee = false) {
         if (steps <= 0) { land(); return; }
         currentIndex = (currentIndex + 1) % mapData.length;
-        playSound('step'); // 音效：每走一步
+        playSfx('step'); // 移動步伐音效
         updatePos();
         setTimeout(() => move(steps - 1, isMarquee), isMarquee ? 40 : 150);
     }
@@ -745,17 +713,15 @@
         let historyEntry = { time: new Date().toLocaleTimeString() };
 
         if (data.type === 'student') {
-            playSound('win'); // 音效：抽中學生（歡呼）
+            playSfx('win'); // 抽中學生歡呼音效
             document.getElementById('status-text').innerText = i18n[currentLang].statusWinner;
             title.innerText = i18n[currentLang].titleWinner;
             title.style.color = '#333';
             display.innerHTML = `<div class="result-name">${data.name}</div>`;
             box.style.borderColor = 'var(--monopoly-blue)';
             
-            // 寫入歷史紀錄
             historyEntry.text = `📍 幸運兒：<span style="color:var(--monopoly-blue);">${data.name}</span>`;
             
-            // 呼叫紙吹雪特效
             confetti({
                 particleCount: 150,
                 spread: 80,
@@ -763,7 +729,7 @@
                 zIndex: 3000
             });
         } else {
-            playSound('fate'); // 音效：抽中機會/命運（神祕音效）
+            playSfx('fate'); // 神祕音效
             const list = data.type === 'chance' ? chanceList : fateList;
             const content = list[Math.floor(Math.random() * list.length)];
             document.getElementById('status-text').innerText = data.type === 'chance' ? i18n[currentLang].statusChance : i18n[currentLang].statusFate;
@@ -773,12 +739,10 @@
             display.innerHTML = `<div class="result-text" style="color:${color}">${content}</div>`;
             box.style.borderColor = color;
             
-            // 寫入歷史紀錄
             const typeStr = data.type === 'chance' ? '🎁 機會' : '⚡ 命運';
             historyEntry.text = `<span style="color:${color}">${typeStr}：${content}</span>`;
         }
         
-        // 將紀錄加到最前面
         historyData.unshift(historyEntry);
     }
 
@@ -789,7 +753,7 @@
 
     function shuffleBoard() {
         if (isAnimating) return;
-        playSound('click'); // 音效：按鈕點擊
+        playSfx('click'); // 點擊音效
         closeResult();
         students.sort(() => Math.random() - 0.5);
         generateMap();
@@ -799,7 +763,7 @@
 
     function resetBoard() {
         if (isAnimating) return;
-        playSound('click'); // 音效：按鈕點擊
+        playSfx('click'); // 點擊音效
         closeResult();
         students = JSON.parse(JSON.stringify(originalStudents));
         currentIndex = 0;
