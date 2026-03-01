@@ -61,7 +61,7 @@
         }
 
         .cell-text { 
-            padding: 0px; 
+            padding: 0px;
             font-size: clamp(5px, 3vmin, 40px);
             color: #111;
             word-break: break-word;
@@ -76,7 +76,7 @@
         .cell.fate .cell-text { color: #dc2626; }
 
         .cell.active { 
-            border: 4px solid var(--monopoly-red); 
+            border: 4px solid var(--monopoly-red);
             box-shadow: inset 0 0 12px var(--monopoly-red); 
             transform: scale(1.08); 
             z-index: 15 !important;
@@ -85,7 +85,7 @@
 
         /* 中央控制區 */
         #center-area {
-            display: flex; 
+            display: flex;
             flex-direction: column; 
             justify-content: center; 
             align-items: center;
@@ -99,7 +99,7 @@
         }
 
         .logo-text {
-            background: var(--monopoly-red); 
+            background: var(--monopoly-red);
             color: #fff; 
             padding: 8px 20px;
             font-size: clamp(18px, 4vmin, 40px); 
@@ -111,7 +111,7 @@
         }
 
         #status-text { 
-            font-size: clamp(14px, 2.5vmin, 24px); 
+            font-size: clamp(14px, 2.5vmin, 24px);
             margin-bottom: 10px; 
             font-weight: bold; 
             color: #333; 
@@ -120,18 +120,19 @@
 
         #dice-container { display: flex; gap: 15px; margin-bottom: 15px; }
         .dice { 
-            width: clamp(40px, 6vmin, 60px); 
+            width: clamp(40px, 6vmin, 60px);
             height: clamp(40px, 6vmin, 60px); 
             background: white; color: var(--monopoly-red); 
             font-size: clamp(20px, 4vmin, 35px); border-radius: 10px; 
-            display: flex; justify-content: center; align-items: center; 
+            display: flex; justify-content: center; align-items: center;
             border: 3px solid #000; box-shadow: 3px 3px 0px #000; 
             font-weight: bold;
         }
 
         .btn-group { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; z-index: 10; width: 100%;}
         button { 
-            cursor: pointer; padding: 10px 18px; 
+            cursor: pointer;
+            padding: 10px 18px; 
             font-size: clamp(12px, 1.8vmin, 18px);
             font-weight: bold; border: 2px solid #000; box-shadow: 3px 3px 0px #000;
             transition: 0.2s;
@@ -149,20 +150,24 @@
 
         /* 設定介面 Modal & 歷史紀錄 Modal */
         .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 1000;
         }
         .modal-content {
-            background: #fff; width: 85%; max-width: 700px; padding: 25px; border-radius: 12px;
+            background: #fff;
+            width: 85%; max-width: 700px; padding: 25px; border-radius: 12px;
             max-height: 85vh; overflow-y: auto; border: 4px solid #000;
         }
         
         .cloud-section {
-            background: #f0f7ff; padding: 15px; border: 2px dashed var(--monopoly-blue);
+            background: #f0f7ff;
+            padding: 15px; border: 2px dashed var(--monopoly-blue);
             margin-bottom: 20px; border-radius: 8px; text-align: left;
         }
         .code-display {
-            font-size: 22px; color: var(--monopoly-red); letter-spacing: 2px;
+            font-size: 22px;
+            color: var(--monopoly-red); letter-spacing: 2px;
             background: #fff; padding: 5px 15px; border: 2px solid #000; font-family: monospace;
         }
 
@@ -172,21 +177,25 @@
 
         /* 歷史紀錄清單 */
         #history-list {
-            list-style: none; padding: 0; margin: 0; text-align: left;
+            list-style: none;
+            padding: 0; margin: 0; text-align: left;
             max-height: 50vh; overflow-y: auto;
         }
         #history-list li {
-            padding: 10px; border-bottom: 1px dashed #ccc; font-size: 16px; font-weight: bold;
+            padding: 10px;
+            border-bottom: 1px dashed #ccc; font-size: 16px; font-weight: bold;
         }
         #history-list li span.time { color: #666; font-size: 12px; margin-right: 10px; font-weight: normal;}
 
         /* ======== 抽籤結果彈出視窗 ======== */
         #result-modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.75); display: none; justify-content: center; align-items: center; z-index: 2000;
         }
         .result-content {
-            background: #fff; width: 80%; max-width: 500px; padding: 40px; border-radius: 20px;
+            background: #fff;
+            width: 80%; max-width: 500px; padding: 40px; border-radius: 20px;
             text-align: center; border: 6px solid #000; box-shadow: 10px 10px 0px #000;
             animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
@@ -198,8 +207,10 @@
         .result-name { font-size: clamp(36px, 7vmin, 80px); font-weight: bold; color: var(--monopoly-blue); margin: 30px 0; word-break: break-word;}
         .result-text { font-size: clamp(20px, 4vmin, 40px); font-weight: bold; margin: 30px 0; }
         .btn-close-result {
-            background: var(--monopoly-red); color: white; padding: 12px 30px; font-size: clamp(16px, 2.5vmin, 24px);
-            margin-top: 20px; border: 3px solid #000; box-shadow: 4px 4px 0px #000; cursor: pointer; font-weight: bold;
+            background: var(--monopoly-red);
+            color: white; padding: 12px 30px; font-size: clamp(16px, 2.5vmin, 24px);
+            margin-top: 20px; border: 3px solid #000; box-shadow: 4px 4px 0px #000;
+            cursor: pointer; font-weight: bold;
         }
         .btn-close-result:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px #000; }
         .btn-close-result:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px #000; }
@@ -211,25 +222,19 @@
                 height: 90vw; /* 讓版面在手機上偏向方形以騰出更多空間 */
                 max-height: 800px;
             }
-            #center-area {
-                padding: 10px;
-            }
+            #center-area { padding: 10px; }
             .btn-group button {
-                flex: 1 1 40%; /* 讓按鈕在手機上雙排並列，方便點擊 */
+                flex: 1 1 40%;
+                /* 讓按鈕在手機上雙排並列，方便點擊 */
                 padding: 12px 5px;
             }
-            .modal-content {
-                width: 95%;
-                padding: 15px;
-            }
+            .modal-content { width: 95%; padding: 15px; }
             .modal-footer {
                 display: flex;
                 flex-direction: column;
                 gap: 10px;
             }
-            .modal-footer button {
-                width: 100%;
-            }
+            .modal-footer button { width: 100%; }
         }
     </style>
 </head>
@@ -243,7 +248,7 @@
             <label data-i18n="cloudTitle"><b>☁️ 雲端同步與匯入 (Google Sheets)</b></label><br>
             <div style="margin: 10px 0;">
                 <input type="text" id="input-cloud-code" data-i18n-placeholder="cloudPlaceholder" placeholder="輸入5位代碼" style="width: 120px; padding: 8px; border: 2px solid #000;">
-                <button onclick="loadFromCloud()" class="btn-settings" style="padding: 7px 15px; box-shadow: 2px 2px 0#000;" data-i18n="btnLoad">讀取存檔</button>
+                <button onclick="loadFromCloud()" class="btn-settings" style="padding: 7px 15px; box-shadow: 2px 2px 0 #000;" data-i18n="btnLoad">讀取存檔</button>
             </div>
             <div id="display-new-code" style="margin-top: 10px; display:none; background: #fff; padding: 10px; border: 1px solid #ccc;">
                 <span data-i18n="yourCode">您的存取代碼：</span><span class="code-display" id="new-code-text">-----</span>
@@ -317,8 +322,8 @@
 
 <script>
     // --- 重要：請在此貼上你的 Google Apps Script 部署網址 ---
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbz_wBUiEzEU2covgHiBZWOyX_a2sqQD5Dacpn5QgHO3Ri_QxR-GGDlyQ00YJr_XLMHO/exec'; 
-
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbz_wBUiEzEU2covgHiBZWOyX_a2sqQD5Dacpn5QgHO3Ri_QxR-GGDlyQ00YJr_XLMHO/exec';
+    
     const i18n = {
         zh: {
             modalTitle: "🛠️ 系統設定",
@@ -419,10 +424,29 @@
     let fateList = ["下一位抽到的同學需使用英文作答", "下一位抽到的同學答錯，全班扣1分", "下一位抽到的同學需邊跳邊回答", "下一位抽到的同學答錯，需扣雙倍分數"];
     
     let mapData = [];
-    let historyData = []; // 新增歷史紀錄陣列
+    let historyData = []; 
     let currentIndex = 0;
     let isAnimating = false;
     let boardW = 0, boardH = 0;
+
+    // --- 新增：音效設定 ---
+    const sounds = {
+        click: new Audio('https://actions.google.com/sounds/v1/ui/button_click.ogg'),
+        roll: new Audio('https://actions.google.com/sounds/v1/foley/rolling_dice.ogg'),
+        step: new Audio('https://actions.google.com/sounds/v1/ui/pop.ogg'),
+        win: new Audio('https://actions.google.com/sounds/v1/crowds/crowd_cheer_med.ogg'),
+        fate: new Audio('https://actions.google.com/sounds/v1/cartoon/mystery_chime.ogg')
+    };
+
+    // 預載入音效以減少延遲
+    Object.values(sounds).forEach(audio => audio.load());
+
+    function playSound(type) {
+        if (!sounds[type]) return;
+        sounds[type].currentTime = 0; // 重置時間，允許連續點擊/播放
+        sounds[type].play().catch(e => console.log('音效播放遭阻擋:', e));
+    }
+    // ------------------------
 
     document.getElementById('input-students').value = originalStudents.map(s => `${s.id},${s.name}`).join('\n');
     document.getElementById('input-chance').value = chanceList.join('\n');
@@ -467,7 +491,6 @@
                 parsed.push({ id: tLine, name: tLine }); 
             }
         });
-        
         if(parsed.length < 8 || parsed.length > 40) {
             alert(i18n[currentLang].alertCount);
             return false;
@@ -479,7 +502,7 @@
         fateList = document.getElementById('input-fate').value.trim().split('\n').filter(l => l);
 
         currentIndex = 0;
-        historyData = []; // 重新設定時清空歷史紀錄
+        historyData = [];
         generateMap();
         renderBoard();
         return true;
@@ -494,13 +517,11 @@
 
     async function saveToCloud() {
         if (!saveSettings()) return;
-
         const statusText = document.getElementById('status-text');
         statusText.innerText = i18n[currentLang].msgSaveWait;
         
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 12000);
-
         try {
             const response = await fetch(GAS_URL, {
                 method: 'POST',
@@ -513,7 +534,6 @@
                 }),
                 signal: controller.signal
             });
-            
             const result = await response.json();
             clearTimeout(timeoutId);
 
@@ -522,7 +542,7 @@
                 document.getElementById('new-code-text').innerText = result.code;
                 statusText.innerText = i18n[currentLang].msgSaveSuccess + result.code;
                 alert(i18n[currentLang].msgSaveSuccess + result.code);
-                toggleModal(false); 
+                toggleModal(false);
             } else {
                 throw new Error("Result is not success");
             }
@@ -536,7 +556,7 @@
                 alert(i18n[currentLang].msgSaveFail);
                 statusText.innerText = i18n[currentLang].msgSaveFail;
             }
-            toggleModal(false); 
+            toggleModal(false);
         }
     }
 
@@ -571,7 +591,6 @@
                 document.getElementById('input-students').value = originalStudents.map(s => `${s.id},${s.name}`).join('\n');
                 document.getElementById('input-chance').value = chanceList.join('\n');
                 document.getElementById('input-fate').value = fateList.join('\n');
-
                 currentIndex = 0;
                 historyData = [];
                 generateMap();
@@ -680,6 +699,8 @@
 
     function rollDice() {
         if (isAnimating) return;
+        playSound('click'); // 音效：按鈕點擊
+        playSound('roll');  // 音效：擲骰子
         isAnimating = true;
         closeResult(); 
         let s1 = Math.floor(Math.random() * 6) + 1;
@@ -699,6 +720,7 @@
 
     function startMarquee() {
         if (isAnimating) return;
+        playSound('click'); // 音效：按鈕點擊
         isAnimating = true;
         closeResult();
         move(Math.floor(Math.random() * mapData.length) + mapData.length, true);
@@ -707,6 +729,7 @@
     function move(steps, isMarquee = false) {
         if (steps <= 0) { land(); return; }
         currentIndex = (currentIndex + 1) % mapData.length;
+        playSound('step'); // 音效：每走一步
         updatePos();
         setTimeout(() => move(steps - 1, isMarquee), isMarquee ? 40 : 150);
     }
@@ -719,10 +742,10 @@
         const display = document.getElementById('result-display');
         
         modal.style.display = 'flex';
-        
         let historyEntry = { time: new Date().toLocaleTimeString() };
 
         if (data.type === 'student') {
+            playSound('win'); // 音效：抽中學生（歡呼）
             document.getElementById('status-text').innerText = i18n[currentLang].statusWinner;
             title.innerText = i18n[currentLang].titleWinner;
             title.style.color = '#333';
@@ -732,19 +755,18 @@
             // 寫入歷史紀錄
             historyEntry.text = `📍 幸運兒：<span style="color:var(--monopoly-blue);">${data.name}</span>`;
             
-            // 呼叫紙吹雪特效 (確保層級蓋過彈出視窗)
+            // 呼叫紙吹雪特效
             confetti({
                 particleCount: 150,
                 spread: 80,
                 origin: { y: 0.6 },
                 zIndex: 3000
             });
-            
         } else {
+            playSound('fate'); // 音效：抽中機會/命運（神祕音效）
             const list = data.type === 'chance' ? chanceList : fateList;
             const content = list[Math.floor(Math.random() * list.length)];
             document.getElementById('status-text').innerText = data.type === 'chance' ? i18n[currentLang].statusChance : i18n[currentLang].statusFate;
-            
             title.innerText = data.type === 'chance' ? i18n[currentLang].titleChance : i18n[currentLang].titleFate;
             const color = data.type === 'chance' ? '#d97706' : '#dc2626';
             title.style.color = color;
@@ -767,6 +789,7 @@
 
     function shuffleBoard() {
         if (isAnimating) return;
+        playSound('click'); // 音效：按鈕點擊
         closeResult();
         students.sort(() => Math.random() - 0.5);
         generateMap();
@@ -776,6 +799,7 @@
 
     function resetBoard() {
         if (isAnimating) return;
+        playSound('click'); // 音效：按鈕點擊
         closeResult();
         students = JSON.parse(JSON.stringify(originalStudents));
         currentIndex = 0;
