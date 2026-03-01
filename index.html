@@ -97,6 +97,30 @@
             z-index: 1;
         }
 
+        /* ======== 新增：音訊控制按鈕 ======== */
+        .audio-controls {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            display: flex;
+            gap: 8px;
+            z-index: 20;
+        }
+        .audio-btn {
+            background: #fff;
+            border: 2px solid #000;
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 5px 8px;
+            font-size: 18px;
+            box-shadow: 2px 2px 0px #000;
+            transition: 0.1s;
+        }
+        .audio-btn:active {
+            transform: translate(1px, 1px);
+            box-shadow: 1px 1px 0px #000;
+        }
+
         .logo-text {
             background: var(--monopoly-red);
             color: #fff; 
@@ -222,16 +246,9 @@
                 max-height: 800px;
             }
             #center-area { padding: 10px; }
-            .btn-group button {
-                flex: 1 1 40%;
-                padding: 12px 5px;
-            }
+            .btn-group button { flex: 1 1 40%; padding: 12px 5px; }
             .modal-content { width: 95%; padding: 15px; }
-            .modal-footer {
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-            }
+            .modal-footer { display: flex; flex-direction: column; gap: 10px; }
             .modal-footer button { width: 100%; }
         }
     </style>
@@ -299,6 +316,11 @@
 
 <div id="board-container">
     <div id="center-area">
+        <div class="audio-controls">
+            <button class="audio-btn" id="btn-bgm" onclick="toggleBGM()" title="切換背景音樂">🎵</button>
+            <button class="audio-btn" id="btn-sfx" onclick="toggleSFX()" title="切換音效">🔊</button>
+        </div>
+     
         <div class="logo-text" data-i18n="logo">大富翁抽籤</div>
         <div id="status-text" data-i18n="ready">準備好了嗎？</div>
         
@@ -377,33 +399,78 @@
         step: new Audio('./sounds/step.mp3'),
         win: new Audio('./sounds/win.mp3'),
         fate: new Audio('./sounds/fate.mp3'),
-        bgm: new Audio('./sounds/bgm.mp3')
+        bgm: new Audio('./sounds/bgm.mp3'),
+        spin: new Audio('./sounds/spin.mp3'), // 新增：轉動音效
+        blow: new Audio('./sounds/blow.mp3')  // 新增：大風吹專屬音效
     };
 
     // 背景音樂設定
     sounds.bgm.loop = true;
-    sounds.bgm.volume = 0.3; // 建議設為 0.3 以免蓋過說話聲
+    sounds.bgm.volume = 0.3;
 
-    // 播放音效輔助函式
+    // 音訊開關狀態
+    let isBgmEnabled = true;
+    let isSfxEnabled = true;
+
+    // 切換背景音樂
+    function toggleBGM() {
+        isBgmEnabled = !isBgmEnabled;
+        const btn = document.getElementById('btn-bgm');
+        if (isBgmEnabled) {
+            sounds.bgm.play().catch(e => console.log(e));
+            btn.innerText = '🎵';
+        } else {
+            sounds.bgm.pause();
+            btn.innerText = '🔇';
+        }
+    }
+
+    // 切換音效
+    function toggleSFX() {
+        isSfxEnabled = !isSfxEnabled;
+        const btn = document.getElementById('btn-sfx');
+        if (isSfxEnabled) {
+            btn.innerText = '🔊';
+        } else {
+            btn.innerText = '🔈';
+            sounds.spin.pause(); // 關閉時若正在轉動則立刻停止
+        }
+    }
+
+    // 播放音效輔助函式 (加入開關判斷)
     function playSfx(name) {
+        if (!isSfxEnabled) return;
         if(sounds[name]) {
             sounds[name].currentTime = 0; // 重置時間，允許連續播放
             sounds[name].play().catch(e => console.log("播放被阻擋:", e));
         }
     }
 
-    // 解鎖瀏覽器音訊限制 (關鍵：使用者必須點擊一下網頁才能有聲音)
+    // 控制轉動持續音效的函式
+    function startSpinSound() {
+        if (!isSfxEnabled) return;
+        sounds.spin.currentTime = 0;
+        sounds.spin.loop = true;
+        sounds.spin.play().catch(e => console.log("播放被阻擋:", e));
+    }
+    function stopSpinSound() {
+        sounds.spin.pause();
+        sounds.spin.currentTime = 0;
+    }
+
+    // 解鎖瀏覽器音訊限制
     function unlockAudio() {
         Object.values(sounds).forEach(audio => {
-            if (audio !== sounds.bgm) { // 除了 BGM 外，其他音效播一下即停
+            if (audio !== sounds.bgm) { 
                 audio.play().then(() => {
                     audio.pause();
                     audio.currentTime = 0;
                 }).catch(e => {});
             }
         });
-        
-        sounds.bgm.play().catch(e => console.log("BGM 播放被阻擋:", e));
+        if (isBgmEnabled) {
+            sounds.bgm.play().catch(e => console.log("BGM 播放被阻擋:", e));
+        }
         
         // 解鎖成功後移除監聽器
         document.removeEventListener('click', unlockAudio);
@@ -459,6 +526,7 @@
                 parsed.push({ id: tLine, name: tLine }); 
             }
         });
+
         if(parsed.length < 8 || parsed.length > 40) {
             alert(i18n[currentLang].alertCount);
             return false;
@@ -490,6 +558,7 @@
         
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 12000);
+
         try {
             const response = await fetch(GAS_URL, {
                 method: 'POST',
@@ -502,6 +571,7 @@
                 }),
                 signal: controller.signal
             });
+
             const result = await response.json();
             clearTimeout(timeoutId);
 
@@ -547,6 +617,7 @@
                 redirect: 'follow',
                 signal: controller.signal
             });
+
             const result = await response.json();
             clearTimeout(timeoutId);
 
@@ -559,6 +630,7 @@
                 document.getElementById('input-students').value = originalStudents.map(s => `${s.id},${s.name}`).join('\n');
                 document.getElementById('input-chance').value = chanceList.join('\n');
                 document.getElementById('input-fate').value = fateList.join('\n');
+
                 currentIndex = 0;
                 historyData = [];
                 generateMap();
@@ -670,7 +742,7 @@
         playSfx('click'); // 點擊音效
         playSfx('roll');  // 擲骰子音效
         isAnimating = true;
-        closeResult(); 
+        closeResult();
         let s1 = Math.floor(Math.random() * 6) + 1;
         let s2 = Math.floor(Math.random() * 6) + 1;
         let count = 0;
@@ -681,6 +753,7 @@
                 clearInterval(timer);
                 document.getElementById('dice1').innerText = s1;
                 document.getElementById('dice2').innerText = s2;
+                startSpinSound(); // 新增：開始移動時播放轉動音效
                 move(s1 + s2);
             }
         }, 50);
@@ -691,6 +764,7 @@
         playSfx('click'); // 點擊音效
         isAnimating = true;
         closeResult();
+        startSpinSound(); // 新增：快速抽籤時播放轉動音效
         move(Math.floor(Math.random() * mapData.length) + mapData.length, true);
     }
 
@@ -703,6 +777,8 @@
     }
 
     function land() {
+        stopSpinSound(); // 新增：抵達目標時立刻停止轉動音效
+
         const data = mapData[currentIndex];
         const modal = document.getElementById('result-modal');
         const box = document.getElementById('result-box');
@@ -721,7 +797,6 @@
             box.style.borderColor = 'var(--monopoly-blue)';
             
             historyEntry.text = `📍 幸運兒：<span style="color:var(--monopoly-blue);">${data.name}</span>`;
-            
             confetti({
                 particleCount: 150,
                 spread: 80,
@@ -753,7 +828,7 @@
 
     function shuffleBoard() {
         if (isAnimating) return;
-        playSfx('click'); // 點擊音效
+        playSfx('blow'); // 更新：改為播放大風吹專屬音效
         closeResult();
         students.sort(() => Math.random() - 0.5);
         generateMap();
