@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>大富翁抽籤系統byDigitalTeacherHK</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --board-bg: #cde6d0;
@@ -15,6 +16,8 @@
             --monopoly-green: #1fb25a;
             --monopoly-purple: #8b5cf6;
             --monopoly-yellow: #ffb703;
+            --font-zh: 'GenWanMin', 'Microsoft JhengHei', system-ui, sans-serif;
+            --font-en: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
 
         body {
@@ -26,7 +29,7 @@
             background-attachment: fixed;
             background-color: var(--board-bg); /* 圖片載入前的底色 */
             color: #000;
-            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            font-family: var(--font-zh);
             margin: 0;
             display: flex;
             justify-content: center;
@@ -88,7 +91,7 @@
             display: block;
         }
 
-        .cell-text { 
+        .cell-text {
             padding: 0px;
             font-size: clamp(5px, 3vmin, 40px);
             color: #111;
@@ -99,14 +102,14 @@
 
         .cell.chance { background: #ffebcc; }
         .cell.chance .cell-text { color: #d97706; }
-        
+
         .cell.fate { background: #ffe6e6; }
         .cell.fate .cell-text { color: #dc2626; }
 
-        .cell.active { 
+        .cell.active {
             border: 4px solid var(--monopoly-red);
-            box-shadow: inset 0 0 12px var(--monopoly-red); 
-            transform: scale(1.08); 
+            box-shadow: inset 0 0 12px var(--monopoly-red);
+            transform: scale(1.08);
             z-index: 15 !important;
             background: #fff0f0 !important;
         }
@@ -114,26 +117,51 @@
         /* 中央控制區 */
         #center-area {
             display: flex;
-            flex-direction: column; 
-            justify-content: center; 
+            flex-direction: column;
+            justify-content: center;
             align-items: center;
-            background: var(--center-bg); 
-            border: 2px solid var(--border-color); 
-            margin: 5px; 
+            background: var(--center-bg);
+            border: 2px solid var(--border-color);
+            margin: 5px;
             padding: 10px 20px;
             position: relative;
             text-align: center;
             z-index: 1;
         }
 
-        /* ======== 新增：音訊控制按鈕 ======== */
-        .audio-controls {
+        /* ======== 右上角控制區（音量＋歷史＋設定） ======== */
+        .top-right-controls {
             position: absolute;
             top: 10px;
             right: 15px;
             display: flex;
-            gap: 8px;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
             z-index: 20;
+        }
+        .top-right-row,
+        .bottom-right-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ======== 左上角工具區（大風吹＋順序重設） ======== */
+        .top-left-tools {
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 20;
+        }
+
+        /* 音訊控制按鈕本身 */
+        .audio-controls {
+            display: flex;
+            gap: 8px;
         }
         .audio-btn {
             background: #fff;
@@ -161,21 +189,28 @@
 
         .logo-text {
             background: var(--monopoly-red);
-            color: #fff; 
+            color: #fff;
             padding: 8px 20px;
-            font-size: clamp(18px, 4vmin, 40px); 
-            transform: rotate(-3deg); 
-            border: 3px solid #000; 
+            font-size: clamp(18px, 4vmin, 40px);
+            transform: rotate(-3deg);
+            border: 3px solid #000;
             box-shadow: 5px 5px 0px #000;
             margin-bottom: 15px;
             font-weight: bold;
         }
 
-        #status-text { 
+        .logo-image {
+            width: min(90%, 500px);
+            height: auto;
+            display: block;
+            margin-bottom: 15px;
+        }
+
+        #status-text {
             font-size: clamp(14px, 2.5vmin, 24px);
-            margin-bottom: 6px; 
-            font-weight: bold; 
-            color: #333; 
+            margin-bottom: 6px;
+            font-weight: bold;
+            color: #333;
             min-height: 3vmin;
         }
 
@@ -201,25 +236,39 @@
         }
 
         #dice-container { display: flex; gap: 15px; margin-bottom: 15px; }
-        .dice { 
+        .dice {
             width: clamp(40px, 6vmin, 60px);
-            height: clamp(40px, 6vmin, 60px); 
-            background: white; color: var(--monopoly-red); 
-            font-size: clamp(20px, 4vmin, 35px); border-radius: 10px; 
+            height: clamp(40px, 6vmin, 60px);
+            background: white; color: var(--monopoly-red);
+            font-size: clamp(20px, 4vmin, 35px); border-radius: 10px;
             display: flex; justify-content: center; align-items: center;
-            border: 3px solid #000; box-shadow: 3px 3px 0px #000; 
+            border: 3px solid #000; box-shadow: 3px 3px 0px #000;
             font-weight: bold;
         }
 
         /* 主要操作按鈕區（擲骰子／快速抽籤） */
         .btn-main-group {
             display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
             z-index: 10;
             width: 100%;
             margin-bottom: 8px;
+        }
+
+        /* 放大的擲骰子按鈕（置中顯眼） */
+        #btn-roll {
+            min-width: 210px;
+            padding: 16px 26px;
+            font-size: clamp(24px, 3vmin, 30px);
+        }
+
+        /* 縮小版快速抽籤，排在擲骰子下方 */
+        #btn-marquee {
+            min-width: 150px;
+            padding: 8px 16px;
+            font-size: clamp(12px, 1.8vmin, 16px);
         }
 
         /* 次要工具列（大風吹／重設／歷史／設定） */
@@ -232,9 +281,9 @@
             width: 100%;
         }
 
-        button { 
+        button {
             cursor: pointer;
-            padding: 10px 18px; 
+            padding: 10px 18px;
             font-size: clamp(12px, 1.8vmin, 18px);
             font-weight: bold; border: 2px solid #000; box-shadow: 3px 3px 0px #000;
             transition: 0.2s;
@@ -279,7 +328,7 @@
             width: 85%; max-width: 700px; padding: 25px; border-radius: 12px;
             max-height: 85vh; overflow-y: auto; border: 4px solid #000;
         }
-        
+
         .cloud-section {
             background: #f0f7ff;
             padding: 15px; border: 2px dashed var(--monopoly-blue);
@@ -396,7 +445,8 @@
                 max-height: 800px;
             }
             #center-area { padding: 8px; }
-            .btn-main-group button { flex: 1 1 45%; padding: 12px 5px; }
+            /* 手機上維持縱向排列，只微調內距 */
+            .btn-main-group button { width: auto; }
             .btn-toolbar {
                 overflow-x: auto;
                 justify-content: flex-start;
@@ -424,7 +474,7 @@
                 <p style="font-size: 12px; color: #666; margin-top:5px;" data-i18n="codeHint">* 請記下代碼，以便日後讀取資料。</p>
             </div>
         </div>
-        
+
         <label data-i18n="langLabel"><b>🌐 介面語言 / Language</b></label><br>
         <select id="lang-select" onchange="changeLanguage(this.value)">
             <option value="zh">繁體中文</option>
@@ -433,13 +483,13 @@
 
         <label data-i18n="labelStudents"><b>1. 匯入名單</b> (格式：學號,姓名。也可直接貼上名字)</label>
         <textarea id="input-students"></textarea>
-        
+
         <label data-i18n="labelChance"><b>2. 自訂【機會】內容</b> (每行一項)</label>
         <textarea id="input-chance"></textarea>
-        
+
         <label data-i18n="labelFate"><b>3. 自訂【命運】內容</b> (每行一項)</label>
         <textarea id="input-fate"></textarea>
-        
+
         <div class="modal-footer">
             <button onclick="toggleModal(false)" style="background: #ccc; box-shadow:none;" data-i18n="btnCancel">取消返回</button>
             <button onclick="saveAndApplyLocal()" style="background: var(--monopoly-blue); color: #fff;" data-i18n="btnApply">直接套用 (不備份)</button>
@@ -471,42 +521,47 @@
     </div>
 </div>
 
-<div id="board-container">
+        <div id="board-container">
     <div id="center-area">
-        <div class="audio-controls">
-            <button class="audio-btn" id="btn-bgm" onclick="toggleBGM()" title="切換背景音樂">🎵</button>
-            <button class="audio-btn" id="btn-sfx" onclick="toggleSFX()" title="切換音效">🔊</button>
+        <div class="top-right-controls">
+            <div class="top-right-row">
+                <div class="audio-controls">
+                    <button class="audio-btn" id="btn-bgm" onclick="toggleBGM()" title="切換背景音樂">🎵</button>
+                    <button class="audio-btn" id="btn-sfx" onclick="toggleSFX()" title="切換音效">🔊</button>
+                </div>
+            </div>
+            <div class="bottom-right-row">
+                <button id="btn-history" class="icon-btn btn-history" onclick="toggleHistory(true)" title="📜 歷史紀錄">📜</button>
+                <button id="btn-settings" class="icon-btn btn-settings" onclick="toggleModal(true)" title="⚙️ 系統設定">⚙️</button>
+            </div>
         </div>
-     
-        <div class="logo-text" data-i18n="logo">大富翁抽籤</div>
+
+        <div class="top-left-tools">
+            <button id="btn-shuffle" class="icon-btn btn-shuffle" onclick="shuffleBoard()" title="🔄 大風吹">🔄</button>
+            <button id="btn-reset" class="icon-btn btn-reset" onclick="resetBoard()" title="↩️ 順序重設">↩️</button>
+        </div>
+
+        <img src="./logo.png" class="logo-image" alt="Monopoly Picker Logo">
         <div id="status-text" data-i18n="ready" class="status-normal">準備好了嗎？</div>
-        <div id="current-player"></div>
         <div id="hint-text"></div>
-        
+
         <div id="dice-container">
             <div class="dice" id="dice1">?</div>
             <div class="dice" id="dice2">?</div>
         </div>
-        
+
         <!-- 主要操作按鈕 -->
         <div class="btn-main-group">
             <button id="btn-roll" class="btn-roll" onclick="rollDice()" data-i18n="btnRoll">🎲 擲骰子</button>
             <button id="btn-marquee" class="btn-marquee" onclick="startMarquee()" data-i18n="btnQuick">⚡ 快速抽籤</button>
         </div>
 
-        <!-- 次要工具列：以圖示為主，文字放在提示框 -->
-        <div class="btn-toolbar">
-            <button id="btn-shuffle" class="icon-btn btn-shuffle" onclick="shuffleBoard()" title="🔄 大風吹">🔄</button>
-            <button id="btn-reset" class="icon-btn btn-reset" onclick="resetBoard()" title="↩️ 順序重設">↩️</button>
-            <button id="btn-history" class="icon-btn btn-history" onclick="toggleHistory(true)" title="📜 歷史紀錄">📜</button>
-            <button id="btn-settings" class="icon-btn btn-settings" onclick="toggleModal(true)" title="⚙️ 系統設定">⚙️</button>
-        </div>
     </div>
 </div>
 
 <script>
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbxklt9GvSHTJzJBIL-MlwUfHLJtlWDMeaaquDb96A-yPjaH9hUi4yCCVClQ3iH8Yy-K/exec';
-    
+
     const i18n = {
         zh: {
             modalTitle: "🛠️ 系統設定", cloudTitle: "<b>☁️ 雲端同步與匯入 (Google Sheets)</b>", btnLoad: "讀取存檔",
@@ -550,9 +605,9 @@
     let students = JSON.parse(JSON.stringify(originalStudents));
     let chanceList = ["下一位抽到的同學可免答並直接加1分", "下一位抽到的同學可指定同學代答", "下一位抽到的同學答對，全班加1分", "下一位抽到的同學回答時，可獲得提示"];
     let fateList = ["下一位抽到的同學需使用英文作答", "下一位抽到的同學答錯，全班扣1分", "下一位抽到的同學需邊跳邊回答", "下一位抽到的同學答錯，需扣雙倍分數"];
-    
+
     let mapData = [];
-    let historyData = []; 
+    let historyData = [];
     let currentIndex = 0;
     let isAnimating = false;
     let boardW = 0, boardH = 0;
@@ -626,7 +681,7 @@
     // 解鎖瀏覽器音訊限制
     function unlockAudio() {
         Object.values(sounds).forEach(audio => {
-            if (audio !== sounds.bgm) { 
+            if (audio !== sounds.bgm) {
                 audio.play().then(() => {
                     audio.pause();
                     audio.currentTime = 0;
@@ -636,12 +691,12 @@
         if (isBgmEnabled) {
             sounds.bgm.play().catch(e => console.log("BGM 播放被阻擋:", e));
         }
-        
+
         // 解鎖成功後移除監聽器
         document.removeEventListener('click', unlockAudio);
         document.removeEventListener('touchstart', unlockAudio);
     }
-    
+
     // 音效按鈕視覺更新
     function refreshAudioButtons() {
         const bgmBtn = document.getElementById('btn-bgm');
@@ -662,8 +717,8 @@
     document.addEventListener('click', unlockAudio);
     document.addEventListener('touchstart', unlockAudio);
     // ==========================================
-    
-    
+
+
     document.getElementById('input-students').value = originalStudents.map(s => `${s.id},${s.name}`).join('\n');
     document.getElementById('input-chance').value = chanceList.join('\n');
     document.getElementById('input-fate').value = fateList.join('\n');
@@ -675,7 +730,7 @@
     function toggleHistory(show) {
         const modal = document.getElementById('history-modal');
         const list = document.getElementById('history-list');
-        
+
         if (show) {
             list.innerHTML = '';
             if (historyData.length === 0) {
@@ -705,7 +760,7 @@
     function saveSettings() {
         const rawStudents = document.getElementById('input-students').value.trim().split('\n');
         let parsed = [];
-        
+
         rawStudents.forEach(line => {
             let tLine = line.trim();
             if(tLine === '') return;
@@ -713,7 +768,7 @@
                 let parts = tLine.split(',');
                 parsed.push({ id: parts[0].trim(), name: parts[1].trim() || parts[0].trim() });
             } else {
-                parsed.push({ id: tLine, name: tLine }); 
+                parsed.push({ id: tLine, name: tLine });
             }
         });
 
@@ -734,11 +789,11 @@
         renderBoard();
         return true;
     }
-    
+
     function saveAndApplyLocal() {
         if (saveSettings()) {
             document.getElementById('status-text').innerText = i18n[currentLang].statusSaved;
-            toggleModal(false); 
+            toggleModal(false);
         }
     }
 
@@ -746,7 +801,7 @@
         if (!saveSettings()) return;
         const statusText = document.getElementById('status-text');
         statusText.innerText = i18n[currentLang].msgSaveWait;
-        
+
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 12000);
 
@@ -861,13 +916,13 @@
         let sIdx = 0;
         let specialIndices = [0, boardW - 1, boardW + boardH - 2, 2 * boardW + boardH - 3];
         const colors = ['#fdf6e3', '#e0f7fa', '#fce4ec', '#fff3e0', '#e8f5e9', '#fff9c4'];
-        
+
         for (let i = 0; i < totalCells; i++) {
             if (specialIndices.includes(i)) {
                 let isChance = i === specialIndices[0] || i === specialIndices[2];
-                mapData.push({ 
-                    type: isChance ? 'chance' : 'fate', 
-                    text: isChance ? i18n[currentLang].mapChance : i18n[currentLang].mapFate 
+                mapData.push({
+                    type: isChance ? 'chance' : 'fate',
+                    text: isChance ? i18n[currentLang].mapChance : i18n[currentLang].mapFate
                 });
             } else {
                 if(students[sIdx]) {
@@ -876,9 +931,9 @@
                     if (!studentHouses[stu.id]) {
                         studentHouses[stu.id] = { small: 0, middle: 0, large: 0 };
                     }
-                    mapData.push({ 
-                        type: 'student', 
-                        name: stu.name, 
+                    mapData.push({
+                        type: 'student',
+                        name: stu.name,
                         id: stu.id,
                         color: colors[colorIdx],
                         houses: studentHouses[stu.id]
@@ -918,7 +973,7 @@
         const board = document.getElementById('board-container');
         board.style.gridTemplateColumns = `repeat(${boardW}, 1fr)`;
         board.style.gridTemplateRows = `repeat(${boardH}, 1fr)`;
-        
+
         const centerArea = document.getElementById('center-area');
         centerArea.style.gridColumn = `2 / ${boardW}`;
         centerArea.style.gridRow = `2 / ${boardH}`;
@@ -928,7 +983,7 @@
             const cell = document.createElement('div');
             cell.id = `cell-${i}`;
             cell.className = `cell ${data.type}`;
-            
+
             if (data.type === 'student') {
                 cell.style.backgroundColor = data.color;
                 const housesHTML = getHouseIconsHTML(data.houses);
@@ -940,7 +995,7 @@
             } else {
                 cell.innerHTML = `<div class="cell-text">${data.text}</div>`;
             }
-            
+
             let pos = getGridPos(i, boardW, boardH);
             cell.style.gridColumn = pos.col;
             cell.style.gridRow = pos.row;
@@ -1004,7 +1059,7 @@
         const box = document.getElementById('result-box');
         const title = document.getElementById('result-title');
         const display = document.getElementById('result-display');
-        
+
         modal.style.display = 'flex';
         let historyEntry = { time: new Date().toLocaleTimeString() };
 
@@ -1026,10 +1081,10 @@
                 </div>
             `;
             box.style.borderColor = 'var(--monopoly-blue)';
-            
+
             historyEntry.type = 'winner';
             historyEntry.text = `📍 <span style="color:var(--monopoly-blue);">${data.name}</span>`;
-            
+
             const btnCorrect = document.getElementById('btn-house-correct');
             const btnWrong = document.getElementById('btn-house-wrong');
             if (btnCorrect) {
@@ -1054,12 +1109,12 @@
             title.style.color = color;
             display.innerHTML = `<div class="result-text" style="color:${color}">${content}</div>`;
             box.style.borderColor = color;
-            
+
             const typeStr = data.type === 'chance' ? '🎁 機會' : '⚡ 命運';
             historyEntry.type = data.type === 'chance' ? 'chance' : 'fate';
             historyEntry.text = `<span style="color:${color}">${typeStr}</span>：${content}`;
         }
-        
+
         historyData.unshift(historyEntry);
     }
 
@@ -1243,6 +1298,7 @@
 
     function changeLanguage(lang) {
         currentLang = lang;
+        document.body.style.fontFamily = (lang === 'en') ? 'var(--font-en)' : 'var(--font-zh)';
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
             if (i18n[lang][key]) el.innerHTML = i18n[lang][key];
@@ -1251,15 +1307,9 @@
             const key = el.getAttribute('data-i18n-placeholder');
             if (i18n[lang][key]) el.placeholder = i18n[lang][key];
         });
-
-        const hintEl = document.getElementById('hint-text');
-        if (hintEl && i18n[lang].hint) {
-            hintEl.innerText = i18n[lang].hint;
-        }
-
         updateToolbarTitles();
         setStatus('normal', i18n[lang].ready);
-        generateMap(); 
+        generateMap();
         renderBoard();
     }
 
