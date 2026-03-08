@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>大富翁抽籤系統byDigitalTeacherHK</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -437,6 +438,105 @@
             color: #000;
         }
 
+        /* ======== 登入系統 ======== */
+        #auth-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 9999;
+            font-family: var(--font-zh);
+        }
+        #auth-overlay.hidden { display: none; }
+
+        .auth-card {
+            background: #fff;
+            width: 90%; max-width: 400px;
+            padding: 40px 30px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        .auth-card h2 {
+            font-size: 28px; margin-bottom: 8px; color: #1a1a2e;
+        }
+        .auth-card .subtitle {
+            font-size: 14px; color: #666; margin-bottom: 24px;
+        }
+        .auth-input-group {
+            text-align: left; margin-bottom: 16px;
+        }
+        .auth-input-group label {
+            display: block; font-size: 13px; font-weight: bold;
+            color: #333; margin-bottom: 6px;
+        }
+        .auth-input-group input {
+            width: 100%; padding: 12px 14px; border: 2px solid #ddd;
+            border-radius: 8px; font-size: 15px; box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        .auth-input-group input:focus {
+            outline: none; border-color: var(--monopoly-blue);
+        }
+        .auth-btn {
+            width: 100%; padding: 14px; font-size: 16px;
+            font-weight: bold; color: #fff; border: none;
+            border-radius: 8px; cursor: pointer; margin-top: 8px;
+            transition: opacity 0.2s;
+        }
+        .auth-btn:hover { opacity: 0.9; }
+        .auth-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .auth-btn-primary { background: var(--monopoly-blue); }
+        .auth-btn-secondary { background: #6c757d; }
+        .auth-toggle {
+            margin-top: 20px; font-size: 13px; color: #666;
+        }
+        .auth-toggle a {
+            color: var(--monopoly-blue); cursor: pointer;
+            text-decoration: underline; font-weight: bold;
+        }
+        .auth-error {
+            color: var(--monopoly-red); font-size: 13px;
+            margin-top: 10px; min-height: 20px;
+        }
+        .auth-success {
+            color: var(--monopoly-green); font-size: 13px;
+            margin-top: 10px; min-height: 20px;
+        }
+
+        /* 使用者狀態列 */
+        #user-bar {
+            position: fixed;
+            top: 8px; right: 12px;
+            display: flex; align-items: center; gap: 8px;
+            z-index: 100;
+            font-size: 12px;
+            background: rgba(255,255,255,0.92);
+            padding: 5px 12px; border-radius: 20px;
+            border: 2px solid #000;
+            box-shadow: 2px 2px 0 #000;
+        }
+        #user-bar.hidden { display: none; }
+        #user-bar .user-email {
+            color: #333; font-weight: bold;
+            max-width: 160px; overflow: hidden;
+            text-overflow: ellipsis; white-space: nowrap;
+        }
+        #user-bar button {
+            padding: 4px 10px; font-size: 11px;
+            min-width: auto; border-radius: 12px;
+            box-shadow: 1px 1px 0 #000;
+        }
+
+        /* 雲端同步狀態指示 */
+        .sync-indicator {
+            font-size: 11px; color: #666;
+            display: flex; align-items: center; gap: 4px;
+        }
+        .sync-indicator.saving { color: #d97706; }
+        .sync-indicator.saved { color: var(--monopoly-green); }
+        .sync-indicator.error { color: var(--monopoly-red); }
+
         /* ======== 響應式設計 (RWD) ======== */
         @media (max-width: 768px), (max-aspect-ratio: 1/1) {
             #board-container {
@@ -459,20 +559,70 @@
 </head>
 <body>
 
+<!-- 登入系統 -->
+<div id="auth-overlay">
+    <div class="auth-card">
+        <h2>🎲 大富翁抽籤系統</h2>
+        <p class="subtitle">Monopoly Picker by DigitalTeacherHK</p>
+
+        <!-- 登入表單 -->
+        <div id="auth-login-form">
+            <div class="auth-input-group">
+                <label>📧 Email</label>
+                <input type="email" id="login-email" placeholder="teacher@school.edu.hk" autocomplete="email">
+            </div>
+            <div class="auth-input-group">
+                <label>🔒 密碼 Password</label>
+                <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+            </div>
+            <button class="auth-btn auth-btn-primary" id="btn-login" onclick="handleLogin()">登入 Login</button>
+            <button class="auth-btn auth-btn-secondary" style="margin-top:8px" onclick="handleGuestEntry()">訪客模式 Guest Mode</button>
+            <div class="auth-toggle">
+                還沒有帳號？ <a onclick="showAuthForm('register')">立即註冊 Register</a>
+            </div>
+            <div class="auth-error" id="login-error"></div>
+        </div>
+
+        <!-- 註冊表單 -->
+        <div id="auth-register-form" style="display:none">
+            <div class="auth-input-group">
+                <label>📧 Email</label>
+                <input type="email" id="register-email" placeholder="teacher@school.edu.hk" autocomplete="email">
+            </div>
+            <div class="auth-input-group">
+                <label>🔒 密碼 Password (至少6位)</label>
+                <input type="password" id="register-password" placeholder="••••••••" autocomplete="new-password">
+            </div>
+            <div class="auth-input-group">
+                <label>🔒 確認密碼 Confirm Password</label>
+                <input type="password" id="register-password-confirm" placeholder="••••••••" autocomplete="new-password">
+            </div>
+            <button class="auth-btn auth-btn-primary" id="btn-register" onclick="handleRegister()">註冊 Register</button>
+            <div class="auth-toggle">
+                已有帳號？ <a onclick="showAuthForm('login')">返回登入 Login</a>
+            </div>
+            <div class="auth-error" id="register-error"></div>
+            <div class="auth-success" id="register-success"></div>
+        </div>
+    </div>
+</div>
+
+<!-- 使用者狀態列 -->
+<div id="user-bar" class="hidden">
+    <span class="user-email" id="user-email-display"></span>
+    <span class="sync-indicator" id="sync-status"></span>
+    <button class="btn-settings" style="font-size:11px" onclick="handleLogout()">登出</button>
+</div>
+
 <div id="settings-modal" class="modal-overlay">
     <div class="modal-content">
         <h2 data-i18n="modalTitle">🛠️ 系統設定</h2>
 
-        <div class="cloud-section">
-            <label data-i18n="cloudTitle"><b>☁️ 雲端同步與匯入 (Google Sheets)</b></label><br>
-            <div style="margin: 10px 0;">
-                <input type="text" id="input-cloud-code" data-i18n-placeholder="cloudPlaceholder" placeholder="輸入5位代碼" style="width: 120px; padding: 8px; border: 2px solid #000;">
-                <button onclick="loadFromCloud()" class="btn-settings" style="padding: 7px 15px; box-shadow: 2px 2px 0 #000;" data-i18n="btnLoad">讀取存檔</button>
-            </div>
-            <div id="display-new-code" style="margin-top: 10px; display:none; background: #fff; padding: 10px; border: 1px solid #ccc;">
-                <span data-i18n="yourCode">您的存取代碼：</span><span class="code-display" id="new-code-text">-----</span>
-                <p style="font-size: 12px; color: #666; margin-top:5px;" data-i18n="codeHint">* 請記下代碼，以便日後讀取資料。</p>
-            </div>
+        <div class="cloud-section" id="cloud-section-auth">
+            <label><b>☁️ <span data-i18n="cloudTitleAuth">雲端同步 (自動)</span></b></label><br>
+            <p style="font-size:13px; color:#555; margin:8px 0;" id="cloud-auth-status">
+                登入後，您的設定會自動同步至雲端。
+            </p>
         </div>
 
         <label data-i18n="langLabel"><b>🌐 介面語言 / Language</b></label><br>
@@ -492,8 +642,7 @@
 
         <div class="modal-footer">
             <button onclick="toggleModal(false)" style="background: #ccc; box-shadow:none;" data-i18n="btnCancel">取消返回</button>
-            <button onclick="saveAndApplyLocal()" style="background: var(--monopoly-blue); color: #fff;" data-i18n="btnApply">直接套用 (不備份)</button>
-            <button onclick="saveToCloud()" style="background: var(--monopoly-green); color: #fff;" data-i18n="btnSave">儲存並備份至雲端</button>
+            <button onclick="saveAndApply()" style="background: var(--monopoly-green); color: #fff;" data-i18n="btnSaveApply">儲存並套用</button>
         </div>
     </div>
 </div>
@@ -560,43 +709,54 @@
 </div>
 
 <script>
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxklt9GvSHTJzJBIL-MlwUfHLJtlWDMeaaquDb96A-yPjaH9hUi4yCCVClQ3iH8Yy-K/exec';
+    // ==========================================
+    // Supabase 初始化
+    // ==========================================
+    const SUPABASE_URL = 'https://doeogfdfvwjyusxkpxrm.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvZW9nZmRmdndqeXVzeGtweHJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NzY5NjYsImV4cCI6MjA4ODQ1Mjk2Nn0.yHcvjaqYIvUnwUa-hbl1WxJ1L93_WRlgfKxw9d9yxRE';
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    let currentUser = null;
+    let _saveTimer = null;
+
+    // ==========================================
+    // i18n
+    // ==========================================
     const i18n = {
         zh: {
-            modalTitle: "🛠️ 系統設定", cloudTitle: "<b>☁️ 雲端同步與匯入 (Google Sheets)</b>", btnLoad: "讀取存檔",
-            yourCode: "您的存取代碼：", codeHint: "* 請記下代碼，以便日後讀取資料。", cloudPlaceholder: "輸入5位代碼",
-            langLabel: "<b>🌐 介面語言 / Language</b>", labelStudents: "<b>1. 匯入名單</b> (格式：學號,姓名。也可直接貼上名字)",
-            labelChance: "<b>2. 自訂【機會】內容</b> (每行一項)", labelFate: "<b>3. 自訂【命運】內容</b> (每行一項)",
-            btnCancel: "取消返回", btnApply: "直接套用 (不備份)", btnSave: "儲存並備份至雲端",
+            modalTitle: "🛠️ 系統設定",
+            cloudTitleAuth: "雲端同步 (自動)",
+            langLabel: "<b>🌐 介面語言 / Language</b>",
+            labelStudents: "<b>1. 匯入名單</b> (格式：學號,姓名。也可直接貼上名字)",
+            labelChance: "<b>2. 自訂【機會】內容</b> (每行一項)",
+            labelFate: "<b>3. 自訂【命運】內容</b> (每行一項)",
+            btnCancel: "取消返回", btnSaveApply: "儲存並套用",
             logo: "大富翁抽籤", ready: "準備好了嗎？", btnRoll: "🎲 擲骰子", btnQuick: "⚡ 快速抽籤",
             btnShuffle: "🔄 大風吹", btnReset: "↩️ 順序重設", btnSettings: "⚙️ 系統設定", btnHistory: "📜 歷史紀錄",
             historyTitle: "📜 抽籤歷史紀錄", historyEmpty: "目前尚無紀錄", alertCount: "人數必須介於 8 到 40 人之間！",
             statusSaved: "✅ 設定已更新！", statusWinner: "📍 抽中幸運兒", statusChance: "🎁 機會時刻",
             statusFate: "⚡ 命運降臨", statusShuffle: "🔄 大風吹，吹亂所有位置！", mapChance: "❓<br>機會", mapFate: "❗<br>命運",
-            statusBuild: "🏠 建造房屋完成！",
-            msgSaveWait: "⏳ 正在備份至雲端...", msgSaveSuccess: "✅ 儲存成功！代碼：", msgSaveFail: "❌ 雲端同步失敗，已轉為本機套用。",
-            msgSaveTimeout: "❌ 連線超時！已轉為本機套用。", msgLoadWait: "⏳ 正在抓取雲端資料...", msgLoadSuccess: "✅ 雲端資料匯入完成！",
-            msgLoadFail: "❌ 找不到此代碼或讀取失敗", alertCodeLen: "請輸入 5 位代碼", btnConfirm: "確認",
-            titleWinner: "🎉 恭喜幸運兒！", titleChance: "🎁 機會時刻", titleFate: "⚡ 命運降臨"
+            statusBuild: "🏠 建造房屋完成！", btnConfirm: "確認",
+            titleWinner: "🎉 恭喜幸運兒！", titleChance: "🎁 機會時刻", titleFate: "⚡ 命運降臨",
+            cloudLoggedIn: "已登入，設定會自動同步至雲端。",
+            cloudGuest: "訪客模式：資料僅存於本機，登入後可同步至雲端。"
         },
         en: {
-            modalTitle: "🛠️ System Settings", cloudTitle: "<b>☁️ Cloud Sync (Google Sheets)</b>", btnLoad: "Load Data",
-            yourCode: "Your Save Code: ", codeHint: "* Please save this code to load your data later.", cloudPlaceholder: "5-digit code",
-            langLabel: "<b>🌐 Interface Language</b>", labelStudents: "<b>1. Player List</b> (ID,Name or just Names)",
+            modalTitle: "🛠️ System Settings",
+            cloudTitleAuth: "Cloud Sync (Auto)",
+            langLabel: "<b>🌐 Interface Language</b>",
+            labelStudents: "<b>1. Player List</b> (ID,Name or just Names)",
             labelChance: "<b>2. [Chance] Events</b>", labelFate: "<b>3. [Fate] Events</b>",
-            btnCancel: "Cancel", btnApply: "Apply Locally", btnSave: "Save & Backup",
+            btnCancel: "Cancel", btnSaveApply: "Save & Apply",
             logo: "Monopoly Picker", ready: "Ready to play?", btnRoll: "🎲 Roll Dice", btnQuick: "⚡ Quick Pick",
             btnShuffle: "🔄 Shuffle", btnReset: "↩️ Reset", btnSettings: "⚙️ Settings", btnHistory: "📜 History",
             historyTitle: "📜 Draw History", historyEmpty: "No records yet", alertCount: "Player count must be 8-40!",
             statusSaved: "✅ Settings Updated!", statusWinner: "📍 Lucky Winner", statusChance: "🎁 Chance!",
             statusFate: "⚡ Fate!", statusShuffle: "🔄 Positions Shuffled!", mapChance: "❓<br>Chance", mapFate: "❗<br>Fate",
-            statusBuild: "🏠 House built!",
-            msgSaveWait: "⏳ Saving to cloud...", msgSaveSuccess: "✅ Saved! Code: ", msgSaveFail: "❌ Cloud sync failed. Applied locally.",
-            msgSaveTimeout: "❌ Connection timeout! Applied locally.", msgLoadWait: "⏳ Loading cloud data...", msgLoadSuccess: "✅ Cloud data loaded!",
-            msgLoadFail: "❌ Invalid code or load failed", alertCodeLen: "Please enter a 5-digit code", btnConfirm: "OK",
+            statusBuild: "🏠 House built!", btnConfirm: "OK",
             titleWinner: "🎉 Winner!", titleChance: "🎁 Chance", titleFate: "⚡ Fate",
-            hint: "Tap a player tile to edit houses"
+            cloudLoggedIn: "Logged in. Settings sync to cloud automatically.",
+            cloudGuest: "Guest mode: data is local only. Log in to sync to cloud."
         }
     };
 
@@ -611,12 +771,195 @@
     let currentIndex = 0;
     let isAnimating = false;
     let boardW = 0, boardH = 0;
-
-    // 每位學生的房屋紀錄：{ [studentId]: { small, middle, large } }
     let studentHouses = {};
 
     // ==========================================
-    // 音效系統設定 (對應本地 ./sounds 資料夾)
+    // 認證系統
+    // ==========================================
+    function showAuthForm(mode) {
+        document.getElementById('auth-login-form').style.display = mode === 'login' ? 'block' : 'none';
+        document.getElementById('auth-register-form').style.display = mode === 'register' ? 'block' : 'none';
+        document.getElementById('login-error').textContent = '';
+        document.getElementById('register-error').textContent = '';
+        document.getElementById('register-success').textContent = '';
+    }
+
+    async function handleLogin() {
+        const email = document.getElementById('login-email').value.trim();
+        const password = document.getElementById('login-password').value;
+        const errEl = document.getElementById('login-error');
+        const btn = document.getElementById('btn-login');
+
+        if (!email || !password) { errEl.textContent = '請輸入 Email 和密碼'; return; }
+
+        btn.disabled = true;
+        btn.textContent = '登入中...';
+        errEl.textContent = '';
+
+        const { data, error } = await sb.auth.signInWithPassword({ email, password });
+
+        btn.disabled = false;
+        btn.textContent = '登入 Login';
+
+        if (error) {
+            errEl.textContent = error.message;
+            return;
+        }
+
+        currentUser = data.user;
+        onAuthSuccess();
+    }
+
+    async function handleRegister() {
+        const email = document.getElementById('register-email').value.trim();
+        const password = document.getElementById('register-password').value;
+        const confirmPassword = document.getElementById('register-password-confirm').value;
+        const errEl = document.getElementById('register-error');
+        const successEl = document.getElementById('register-success');
+        const btn = document.getElementById('btn-register');
+
+        errEl.textContent = '';
+        successEl.textContent = '';
+
+        if (!email || !password) { errEl.textContent = '請輸入 Email 和密碼'; return; }
+        if (password.length < 6) { errEl.textContent = '密碼至少需要 6 個字元'; return; }
+        if (password !== confirmPassword) { errEl.textContent = '兩次密碼不一致'; return; }
+
+        btn.disabled = true;
+        btn.textContent = '註冊中...';
+
+        const { data, error } = await sb.auth.signUp({ email, password });
+
+        btn.disabled = false;
+        btn.textContent = '註冊 Register';
+
+        if (error) {
+            errEl.textContent = error.message;
+            return;
+        }
+
+        if (data.user && data.session) {
+            currentUser = data.user;
+            onAuthSuccess();
+        } else {
+            successEl.textContent = '✅ 註冊成功！請查收驗證郵件後登入。';
+        }
+    }
+
+    function handleGuestEntry() {
+        currentUser = null;
+        document.getElementById('auth-overlay').classList.add('hidden');
+        document.getElementById('user-bar').classList.add('hidden');
+        updateCloudStatusText();
+        initGame();
+    }
+
+    async function handleLogout() {
+        await sb.auth.signOut();
+        currentUser = null;
+        document.getElementById('auth-overlay').classList.remove('hidden');
+        document.getElementById('user-bar').classList.add('hidden');
+        showAuthForm('login');
+    }
+
+    async function onAuthSuccess() {
+        document.getElementById('auth-overlay').classList.add('hidden');
+        document.getElementById('user-bar').classList.remove('hidden');
+        document.getElementById('user-email-display').textContent = currentUser.email;
+        updateCloudStatusText();
+        await loadUserSettings();
+        initGame();
+    }
+
+    function updateCloudStatusText() {
+        const el = document.getElementById('cloud-auth-status');
+        if (!el) return;
+        el.textContent = currentUser ? i18n[currentLang].cloudLoggedIn : i18n[currentLang].cloudGuest;
+    }
+
+    // ==========================================
+    // Supabase 資料同步
+    // ==========================================
+    function setSyncStatus(status, text) {
+        const el = document.getElementById('sync-status');
+        if (!el) return;
+        el.className = 'sync-indicator ' + status;
+        el.textContent = text;
+    }
+
+    async function loadUserSettings() {
+        if (!currentUser) return;
+        setSyncStatus('saving', '⏳ 載入中...');
+
+        const { data, error } = await sb
+            .from('user_settings')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .maybeSingle();
+
+        if (error) {
+            console.error('Load settings error:', error);
+            setSyncStatus('error', '❌ 載入失敗');
+            return;
+        }
+
+        if (data) {
+            if (data.students && data.students.length >= 8) {
+                originalStudents = data.students;
+                students = JSON.parse(JSON.stringify(originalStudents));
+            }
+            if (data.chance_list && data.chance_list.length > 0) chanceList = data.chance_list;
+            if (data.fate_list && data.fate_list.length > 0) fateList = data.fate_list;
+            if (data.student_houses) studentHouses = data.student_houses;
+            if (data.history_data) historyData = data.history_data;
+            if (data.language) currentLang = data.language;
+
+            document.getElementById('input-students').value = originalStudents.map(s => `${s.id},${s.name}`).join('\n');
+            document.getElementById('input-chance').value = chanceList.join('\n');
+            document.getElementById('input-fate').value = fateList.join('\n');
+            document.getElementById('lang-select').value = currentLang;
+
+            setSyncStatus('saved', '✅ 已同步');
+        } else {
+            setSyncStatus('saved', '🆕 新用戶');
+        }
+    }
+
+    async function saveUserSettings() {
+        if (!currentUser) return;
+        setSyncStatus('saving', '⏳ 儲存中...');
+
+        const payload = {
+            user_id: currentUser.id,
+            students: originalStudents,
+            chance_list: chanceList,
+            fate_list: fateList,
+            student_houses: studentHouses,
+            history_data: historyData,
+            language: currentLang,
+            updated_at: new Date().toISOString()
+        };
+
+        const { error } = await sb
+            .from('user_settings')
+            .upsert(payload, { onConflict: 'user_id' });
+
+        if (error) {
+            console.error('Save settings error:', error);
+            setSyncStatus('error', '❌ 儲存失敗');
+        } else {
+            setSyncStatus('saved', '✅ 已同步');
+        }
+    }
+
+    function debouncedSave() {
+        if (!currentUser) return;
+        clearTimeout(_saveTimer);
+        _saveTimer = setTimeout(() => saveUserSettings(), 1500);
+    }
+
+    // ==========================================
+    // 音效系統設定
     // ==========================================
     const sounds = {
         click: new Audio('./sounds/click.mp3'),
@@ -625,19 +968,16 @@
         win: new Audio('./sounds/win.mp3'),
         fate: new Audio('./sounds/fate.mp3'),
         bgm: new Audio('./sounds/bgm.mp3'),
-        spin: new Audio('./sounds/spin.mp3'), // 新增：轉動音效
-        blow: new Audio('./sounds/blow.mp3')  // 新增：大風吹專屬音效
+        spin: new Audio('./sounds/spin.mp3'),
+        blow: new Audio('./sounds/blow.mp3')
     };
 
-    // 背景音樂設定
     sounds.bgm.loop = true;
     sounds.bgm.volume = 0.3;
 
-    // 音訊開關狀態
     let isBgmEnabled = true;
     let isSfxEnabled = true;
 
-    // 切換背景音樂
     function toggleBGM() {
         isBgmEnabled = !isBgmEnabled;
         if (isBgmEnabled) {
@@ -648,25 +988,22 @@
         refreshAudioButtons();
     }
 
-    // 切換音效
     function toggleSFX() {
         isSfxEnabled = !isSfxEnabled;
         if (!isSfxEnabled) {
-            sounds.spin.pause(); // 關閉時若正在轉動則立刻停止
+            sounds.spin.pause();
         }
         refreshAudioButtons();
     }
 
-    // 播放音效輔助函式 (加入開關判斷)
     function playSfx(name) {
         if (!isSfxEnabled) return;
         if(sounds[name]) {
-            sounds[name].currentTime = 0; // 重置時間，允許連續播放
+            sounds[name].currentTime = 0;
             sounds[name].play().catch(e => console.log("播放被阻擋:", e));
         }
     }
 
-    // 控制轉動持續音效的函式
     function startSpinSound() {
         if (!isSfxEnabled) return;
         sounds.spin.currentTime = 0;
@@ -678,7 +1015,6 @@
         sounds.spin.currentTime = 0;
     }
 
-    // 解鎖瀏覽器音訊限制
     function unlockAudio() {
         Object.values(sounds).forEach(audio => {
             if (audio !== sounds.bgm) {
@@ -691,13 +1027,10 @@
         if (isBgmEnabled) {
             sounds.bgm.play().catch(e => console.log("BGM 播放被阻擋:", e));
         }
-
-        // 解鎖成功後移除監聽器
         document.removeEventListener('click', unlockAudio);
         document.removeEventListener('touchstart', unlockAudio);
     }
 
-    // 音效按鈕視覺更新
     function refreshAudioButtons() {
         const bgmBtn = document.getElementById('btn-bgm');
         const sfxBtn = document.getElementById('btn-sfx');
@@ -713,15 +1046,20 @@
         }
     }
 
-    // 監聽網頁第一次互動
     document.addEventListener('click', unlockAudio);
     document.addEventListener('touchstart', unlockAudio);
+
     // ==========================================
-
-
-    document.getElementById('input-students').value = originalStudents.map(s => `${s.id},${s.name}`).join('\n');
-    document.getElementById('input-chance').value = chanceList.join('\n');
-    document.getElementById('input-fate').value = fateList.join('\n');
+    // 遊戲邏輯
+    // ==========================================
+    function initGame() {
+        document.getElementById('input-students').value = originalStudents.map(s => `${s.id},${s.name}`).join('\n');
+        document.getElementById('input-chance').value = chanceList.join('\n');
+        document.getElementById('input-fate').value = fateList.join('\n');
+        refreshAudioButtons();
+        setControlsEnabled(true);
+        changeLanguage(currentLang);
+    }
 
     function toggleModal(show) {
         document.getElementById('settings-modal').style.display = show ? 'flex' : 'none';
@@ -755,6 +1093,7 @@
     function clearHistory() {
         historyData = [];
         toggleHistory(true);
+        debouncedSave();
     }
 
     function saveSettings() {
@@ -790,114 +1129,11 @@
         return true;
     }
 
-    function saveAndApplyLocal() {
+    function saveAndApply() {
         if (saveSettings()) {
-            document.getElementById('status-text').innerText = i18n[currentLang].statusSaved;
+            setStatus('success', i18n[currentLang].statusSaved);
             toggleModal(false);
-        }
-    }
-
-    async function saveToCloud() {
-        if (!saveSettings()) return;
-        const statusText = document.getElementById('status-text');
-        statusText.innerText = i18n[currentLang].msgSaveWait;
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 12000);
-
-        try {
-            const response = await fetch(GAS_URL, {
-                method: 'POST',
-                redirect: 'follow',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({
-                    students: originalStudents,
-                    chance: chanceList,
-                    fate: fateList
-                }),
-                signal: controller.signal
-            });
-
-            const result = await response.json();
-            clearTimeout(timeoutId);
-
-            if (result.result === 'success') {
-                document.getElementById('display-new-code').style.display = 'block';
-                document.getElementById('new-code-text').innerText = result.code;
-                statusText.innerText = i18n[currentLang].msgSaveSuccess + result.code;
-                alert(i18n[currentLang].msgSaveSuccess + result.code);
-                toggleModal(false);
-            } else {
-                throw new Error("Result is not success");
-            }
-        } catch (e) {
-            clearTimeout(timeoutId);
-            console.error(e);
-            if (e.name === 'AbortError') {
-                alert(i18n[currentLang].msgSaveTimeout);
-                statusText.innerText = i18n[currentLang].msgSaveTimeout;
-            } else {
-                alert(i18n[currentLang].msgSaveFail);
-                statusText.innerText = i18n[currentLang].msgSaveFail;
-            }
-            toggleModal(false);
-        }
-    }
-
-    async function loadFromCloud() {
-        const code = document.getElementById('input-cloud-code').value.trim();
-        if (code.length !== 5) {
-            alert(i18n[currentLang].alertCodeLen);
-            return;
-        }
-
-        const statusText = document.getElementById('status-text');
-        statusText.innerText = i18n[currentLang].msgLoadWait;
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 12000);
-
-        try {
-            const response = await fetch(`${GAS_URL}?code=${code}`, {
-                method: 'GET',
-                redirect: 'follow',
-                signal: controller.signal
-            });
-
-            const result = await response.json();
-            clearTimeout(timeoutId);
-
-            if (result.result === 'success') {
-                originalStudents = result.students;
-                students = JSON.parse(JSON.stringify(originalStudents));
-                chanceList = result.chance;
-                fateList = result.fate;
-                studentHouses = {};
-
-                document.getElementById('input-students').value = originalStudents.map(s => `${s.id},${s.name}`).join('\n');
-                document.getElementById('input-chance').value = chanceList.join('\n');
-                document.getElementById('input-fate').value = fateList.join('\n');
-
-                currentIndex = 0;
-                historyData = [];
-                generateMap();
-                renderBoard();
-                statusText.innerText = i18n[currentLang].msgLoadSuccess;
-                toggleModal(false);
-            } else {
-                alert(i18n[currentLang].msgLoadFail);
-                statusText.innerText = i18n[currentLang].msgLoadFail;
-            }
-        } catch (e) {
-            clearTimeout(timeoutId);
-            console.error(e);
-            if (e.name === 'AbortError') {
-                alert(i18n[currentLang].msgSaveTimeout);
-                statusText.innerText = i18n[currentLang].msgSaveTimeout;
-            } else {
-                alert(i18n[currentLang].msgLoadFail);
-                statusText.innerText = i18n[currentLang].msgLoadFail;
-            }
+            debouncedSave();
         }
     }
 
@@ -1012,8 +1248,8 @@
 
     function rollDice() {
         if (isAnimating) return;
-        playSfx('click'); // 點擊音效
-        playSfx('roll');  // 擲骰子音效
+        playSfx('click');
+        playSfx('roll');
         isAnimating = true;
         setControlsEnabled(false);
         closeResult();
@@ -1027,7 +1263,7 @@
                 clearInterval(timer);
                 document.getElementById('dice1').innerText = s1;
                 document.getElementById('dice2').innerText = s2;
-                startSpinSound(); // 新增：開始移動時播放轉動音效
+                startSpinSound();
                 move(s1 + s2);
             }
         }, 50);
@@ -1035,24 +1271,24 @@
 
     function startMarquee() {
         if (isAnimating) return;
-        playSfx('click'); // 點擊音效
+        playSfx('click');
         isAnimating = true;
         setControlsEnabled(false);
         closeResult();
-        startSpinSound(); // 新增：快速抽籤時播放轉動音效
+        startSpinSound();
         move(Math.floor(Math.random() * mapData.length) + mapData.length, true);
     }
 
     function move(steps, isMarquee = false) {
         if (steps <= 0) { land(); return; }
         currentIndex = (currentIndex + 1) % mapData.length;
-        playSfx('step'); // 移動步伐音效
+        playSfx('step');
         updatePos();
         setTimeout(() => move(steps - 1, isMarquee), isMarquee ? 40 : 150);
     }
 
     function land() {
-        stopSpinSound(); // 新增：抵達目標時立刻停止轉動音效
+        stopSpinSound();
 
         const data = mapData[currentIndex];
         const modal = document.getElementById('result-modal');
@@ -1066,7 +1302,7 @@
         const currentPlayerEl = document.getElementById('current-player');
 
         if (data.type === 'student') {
-            playSfx('win'); // 抽中學生歡呼音效
+            playSfx('win');
             setStatus('success', i18n[currentLang].statusWinner);
             if (currentPlayerEl) {
                 currentPlayerEl.innerText = (currentLang === 'en' ? 'Current player: ' : '目前玩家：') + data.name;
@@ -1100,7 +1336,7 @@
                 zIndex: 3000
             });
         } else {
-            playSfx('fate'); // 神祕音效
+            playSfx('fate');
             const list = data.type === 'chance' ? chanceList : fateList;
             const content = list[Math.floor(Math.random() * list.length)];
             setStatus(data.type === 'chance' ? 'info' : 'warning', data.type === 'chance' ? i18n[currentLang].statusChance : i18n[currentLang].statusFate);
@@ -1116,6 +1352,7 @@
         }
 
         historyData.unshift(historyEntry);
+        debouncedSave();
     }
 
     function closeResult() {
@@ -1148,11 +1385,9 @@
                 if (info.small > 0) {
                     info.small -= 1;
                 } else if (info.middle > 0) {
-                    // 1 middle 拆成 3 small，再減 1 small，最後變 2 small
                     info.middle -= 1;
                     info.small += 2;
                 } else if (info.large > 0) {
-                    // 1 large 拆成 3 middle，再減 1 middle，最後變 2 middle
                     info.large -= 1;
                     info.middle += 2;
                 }
@@ -1164,26 +1399,22 @@
     }
 
     function handleCorrectAnswer(studentId) {
-        const newInfo = updateStudentHouses(studentId, 1);
-
+        updateStudentHouses(studentId, 1);
         generateMap();
         renderBoard();
 
         const stu = students.find(s => s.id == studentId) || originalStudents.find(s => s.id == studentId);
-        const status = i18n[currentLang].statusBuild || '';
-        setStatus('success', status);
+        setStatus('success', i18n[currentLang].statusBuild || '');
 
         const nameText = stu ? stu.name : '';
         const timeStr = new Date().toLocaleTimeString();
-        let historyText;
-        if (currentLang === 'en') {
-            historyText = `🏠 ${nameText} built a house`;
-        } else {
-            historyText = `🏠 ${nameText} 建造了一間房屋`;
-        }
+        const historyText = currentLang === 'en'
+            ? `🏠 ${nameText} built a house`
+            : `🏠 ${nameText} 建造了一間房屋`;
         historyData.unshift({ time: timeStr, text: historyText, type: 'house' });
 
         closeResult();
+        debouncedSave();
     }
 
     function openHouseEditor(studentId) {
@@ -1208,28 +1439,23 @@
         `;
         box.style.borderColor = 'var(--monopoly-blue)';
 
-        const btnPlus = document.getElementById('btn-house-plus');
-        const btnMinus = document.getElementById('btn-house-minus');
-
-        if (btnPlus) {
-            btnPlus.onclick = () => {
-                updateStudentHouses(studentId, 1);
-                generateMap();
-                renderBoard();
-            };
-        }
-        if (btnMinus) {
-            btnMinus.onclick = () => {
-                updateStudentHouses(studentId, -1);
-                generateMap();
-                renderBoard();
-            };
-        }
+        document.getElementById('btn-house-plus').onclick = () => {
+            updateStudentHouses(studentId, 1);
+            generateMap();
+            renderBoard();
+            debouncedSave();
+        };
+        document.getElementById('btn-house-minus').onclick = () => {
+            updateStudentHouses(studentId, -1);
+            generateMap();
+            renderBoard();
+            debouncedSave();
+        };
     }
 
     function shuffleBoard() {
         if (isAnimating) return;
-        playSfx('blow'); // 更新：改為播放大風吹專屬音效
+        playSfx('blow');
         closeResult();
         students.sort(() => Math.random() - 0.5);
         generateMap();
@@ -1239,7 +1465,7 @@
 
     function resetBoard() {
         if (isAnimating) return;
-        playSfx('click'); // 點擊音效
+        playSfx('click');
         closeResult();
         students = JSON.parse(JSON.stringify(originalStudents));
         currentIndex = 0;
@@ -1250,7 +1476,6 @@
         if (currentPlayerEl) currentPlayerEl.innerText = '';
     }
 
-    // 更新工具列按鈕的提示文字（依語系切換）
     function updateToolbarTitles() {
         const langData = i18n[currentLang];
         const btnShuffle = document.getElementById('btn-shuffle');
@@ -1272,21 +1497,6 @@
         el.classList.add(`status-${type || 'normal'}`);
     }
 
-    // 更新工具列按鈕的提示文字（依語系切換）
-    function updateToolbarTitles() {
-        const langData = i18n[currentLang];
-        const btnShuffle = document.getElementById('btn-shuffle');
-        const btnReset = document.getElementById('btn-reset');
-        const btnHistory = document.getElementById('btn-history');
-        const btnSettings = document.getElementById('btn-settings');
-
-        if (btnShuffle && langData.btnShuffle) btnShuffle.title = langData.btnShuffle;
-        if (btnReset && langData.btnReset) btnReset.title = langData.btnReset;
-        if (btnHistory && langData.btnHistory) btnHistory.title = langData.btnHistory;
-        if (btnSettings && langData.btnSettings) btnSettings.title = langData.btnSettings;
-    }
-
-    // 啟用/停用主要操作與工具列按鈕
     function setControlsEnabled(enabled) {
         const ids = ['btn-roll', 'btn-marquee', 'btn-shuffle', 'btn-reset', 'btn-history', 'btn-settings'];
         ids.forEach(id => {
@@ -1308,15 +1518,23 @@
             if (i18n[lang][key]) el.placeholder = i18n[lang][key];
         });
         updateToolbarTitles();
+        updateCloudStatusText();
         setStatus('normal', i18n[lang].ready);
         generateMap();
         renderBoard();
+        debouncedSave();
     }
 
-    // 初始化
-    refreshAudioButtons();
-    setControlsEnabled(true);
-    changeLanguage('zh');
+    // ==========================================
+    // 啟動：檢查現有 session
+    // ==========================================
+    (async function bootstrap() {
+        const { data: { session } } = await sb.auth.getSession();
+        if (session && session.user) {
+            currentUser = session.user;
+            await onAuthSuccess();
+        }
+    })();
 </script>
 </body>
 </html>
