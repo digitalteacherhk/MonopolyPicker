@@ -537,6 +537,30 @@
         .sync-indicator.saved { color: var(--monopoly-green); }
         .sync-indicator.error { color: var(--monopoly-red); }
 
+        /* ======== 班別選擇器 ======== */
+        .class-selector {
+            display: flex; align-items: center; gap: 6px;
+            margin-bottom: 10px; flex-wrap: wrap;
+            justify-content: center;
+        }
+        .class-selector select {
+            font-size: 13px; padding: 4px 8px;
+            border: 2px solid #000; border-radius: 6px;
+            font-weight: bold; margin-bottom: 0;
+            max-width: 140px;
+        }
+        .class-selector button {
+            padding: 4px 8px; font-size: 12px;
+            min-width: auto; border-radius: 6px;
+            box-shadow: 2px 2px 0 #000;
+        }
+        .class-selector .btn-new-class {
+            background: var(--monopoly-green); color: #fff;
+        }
+        .class-selector .btn-del-class {
+            background: var(--monopoly-red); color: #fff;
+        }
+
         /* ======== 響應式設計 (RWD) ======== */
         @media (max-width: 768px), (max-aspect-ratio: 1/1) {
             #board-container {
@@ -610,6 +634,7 @@
 <!-- 使用者狀態列 -->
 <div id="user-bar" class="hidden">
     <span class="user-email" id="user-email-display"></span>
+    <select id="class-select-bar" onchange="switchClass(this.value)" style="font-size:11px; padding:2px 4px; border:1px solid #999; border-radius:4px; font-weight:bold; max-width:100px;"></select>
     <span class="sync-indicator" id="sync-status"></span>
     <button class="btn-settings" style="font-size:11px" onclick="handleLogout()">登出</button>
 </div>
@@ -623,6 +648,19 @@
             <p style="font-size:13px; color:#555; margin:8px 0;" id="cloud-auth-status">
                 登入後，您的設定會自動同步至雲端。
             </p>
+        </div>
+
+        <div class="cloud-section" id="class-management-section" style="background:#f0fff0; border-color:var(--monopoly-green);">
+            <label><b>📚 <span data-i18n="classManageTitle">班別管理</span></b></label>
+            <div class="class-selector" style="margin-top:10px;">
+                <select id="class-select-settings" onchange="switchClass(this.value)" style="flex:1; min-width:120px;"></select>
+                <button class="btn-new-class" onclick="createNewClass()">+ 新增</button>
+                <button class="btn-del-class" onclick="deleteCurrentClass()">🗑️ 刪除</button>
+            </div>
+            <div style="margin-top:8px;">
+                <input type="text" id="input-new-class-name" placeholder="新班別名稱 (如: 5A)" style="padding:6px 10px; border:2px solid #000; border-radius:6px; font-size:13px; width:140px;">
+                <button onclick="renameCurrentClass()" style="padding:4px 10px; font-size:12px; background:#eee; box-shadow:2px 2px 0 #000;">✏️ 重新命名</button>
+            </div>
         </div>
 
         <label data-i18n="langLabel"><b>🌐 介面語言 / Language</b></label><br>
@@ -718,6 +756,8 @@
 
     let currentUser = null;
     let _saveTimer = null;
+    let currentClassName = '預設班級';
+    let classList = [];
 
     // ==========================================
     // i18n
@@ -739,7 +779,8 @@
             statusBuild: "🏠 建造房屋完成！", btnConfirm: "確認",
             titleWinner: "🎉 恭喜幸運兒！", titleChance: "🎁 機會時刻", titleFate: "⚡ 命運降臨",
             cloudLoggedIn: "已登入，設定會自動同步至雲端。",
-            cloudGuest: "訪客模式：資料僅存於本機，登入後可同步至雲端。"
+            cloudGuest: "訪客模式：資料僅存於本機，登入後可同步至雲端。",
+            classManageTitle: "班別管理"
         },
         en: {
             modalTitle: "🛠️ System Settings",
@@ -756,7 +797,8 @@
             statusBuild: "🏠 House built!", btnConfirm: "OK",
             titleWinner: "🎉 Winner!", titleChance: "🎁 Chance", titleFate: "⚡ Fate",
             cloudLoggedIn: "Logged in. Settings sync to cloud automatically.",
-            cloudGuest: "Guest mode: data is local only. Log in to sync to cloud."
+            cloudGuest: "Guest mode: data is local only. Log in to sync to cloud.",
+            classManageTitle: "Class Management"
         }
     };
 
@@ -841,8 +883,16 @@
         if (data.user && data.session) {
             currentUser = data.user;
             onAuthSuccess();
+        } else if (data.user) {
+            const loginResult = await sb.auth.signInWithPassword({ email, password });
+            if (loginResult.data && loginResult.data.user) {
+                currentUser = loginResult.data.user;
+                onAuthSuccess();
+            } else {
+                successEl.textContent = '✅ 註冊成功！請登入。';
+            }
         } else {
-            successEl.textContent = '✅ 註冊成功！請查收驗證郵件後登入。';
+            errEl.textContent = '註冊失敗，請重試。';
         }
     }
 
@@ -857,6 +907,8 @@
     async function handleLogout() {
         await sb.auth.signOut();
         currentUser = null;
+        classList = [];
+        currentClassName = '預設班級';
         document.getElementById('auth-overlay').classList.remove('hidden');
         document.getElementById('user-bar').classList.add('hidden');
         showAuthForm('login');
@@ -867,6 +919,9 @@
         document.getElementById('user-bar').classList.remove('hidden');
         document.getElementById('user-email-display').textContent = currentUser.email;
         updateCloudStatusText();
+        await loadClassList();
+        currentClassName = classList[0] || '預設班級';
+        refreshClassSelectors();
         await loadUserSettings();
         initGame();
     }
@@ -887,6 +942,193 @@
         el.textContent = text;
     }
 
+    async function loadClassList() {
+        if (!currentUser) return;
+
+        const { data, error } = await sb
+            .from('user_settings')
+            .select('class_name')
+            .eq('user_id', currentUser.id)
+            .order('created_at', { ascending: true });
+
+        if (error) {
+            console.error('Load class list error:', error);
+            classList = ['預設班級'];
+        } else if (data && data.length > 0) {
+            classList = data.map(d => d.class_name);
+        } else {
+            classList = ['預設班級'];
+        }
+
+        refreshClassSelectors();
+    }
+
+    function refreshClassSelectors() {
+        const selectors = [
+            document.getElementById('class-select-bar'),
+            document.getElementById('class-select-settings')
+        ];
+        selectors.forEach(sel => {
+            if (!sel) return;
+            sel.innerHTML = '';
+            classList.forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                if (name === currentClassName) opt.selected = true;
+                sel.appendChild(opt);
+            });
+        });
+    }
+
+    async function switchClass(className) {
+        if (className === currentClassName) return;
+        if (!currentUser) return;
+
+        clearTimeout(_saveTimer);
+        currentClassName = className;
+        refreshClassSelectors();
+        await loadUserSettings();
+        initGame();
+    }
+
+    async function createNewClass() {
+        const input = document.getElementById('input-new-class-name');
+        let name = input ? input.value.trim() : '';
+        if (!name) {
+            name = prompt(currentLang === 'en' ? 'Enter new class name:' : '請輸入新班別名稱：');
+        }
+        if (!name) return;
+
+        if (classList.includes(name)) {
+            alert(currentLang === 'en' ? 'This class name already exists!' : '此班別名稱已存在！');
+            return;
+        }
+
+        if (!currentUser) {
+            alert(currentLang === 'en' ? 'Please log in first.' : '請先登入。');
+            return;
+        }
+
+        setSyncStatus('saving', '⏳ 建立中...');
+
+        const defaults = getDefaultGameState();
+        const payload = {
+            user_id: currentUser.id,
+            class_name: name,
+            students: defaults.students,
+            chance_list: defaults.chanceList,
+            fate_list: defaults.fateList,
+            student_houses: {},
+            history_data: [],
+            language: currentLang,
+            updated_at: new Date().toISOString()
+        };
+
+        const { error } = await sb.from('user_settings').insert(payload);
+
+        if (error) {
+            console.error('Create class error:', error);
+            setSyncStatus('error', '❌ 建立失敗');
+            return;
+        }
+
+        classList.push(name);
+        currentClassName = name;
+        refreshClassSelectors();
+        applyGameState(defaults);
+        initGame();
+        setSyncStatus('saved', '✅ 已建立');
+        if (input) input.value = '';
+    }
+
+    async function deleteCurrentClass() {
+        if (!currentUser) return;
+        if (classList.length <= 1) {
+            alert(currentLang === 'en' ? 'Cannot delete the last class.' : '無法刪除最後一個班別。');
+            return;
+        }
+        const msg = currentLang === 'en'
+            ? `Delete class "${currentClassName}"? This cannot be undone.`
+            : `確定刪除「${currentClassName}」？此操作無法復原。`;
+        if (!confirm(msg)) return;
+
+        setSyncStatus('saving', '⏳ 刪除中...');
+
+        const { error } = await sb
+            .from('user_settings')
+            .delete()
+            .eq('user_id', currentUser.id)
+            .eq('class_name', currentClassName);
+
+        if (error) {
+            console.error('Delete class error:', error);
+            setSyncStatus('error', '❌ 刪除失敗');
+            return;
+        }
+
+        classList = classList.filter(n => n !== currentClassName);
+        currentClassName = classList[0];
+        refreshClassSelectors();
+        await loadUserSettings();
+        initGame();
+        setSyncStatus('saved', '✅ 已刪除');
+    }
+
+    async function renameCurrentClass() {
+        if (!currentUser) return;
+        const input = document.getElementById('input-new-class-name');
+        const newName = input ? input.value.trim() : '';
+        if (!newName) {
+            alert(currentLang === 'en' ? 'Please enter a new name.' : '請輸入新名稱。');
+            return;
+        }
+        if (newName === currentClassName) return;
+        if (classList.includes(newName)) {
+            alert(currentLang === 'en' ? 'This class name already exists!' : '此班別名稱已存在！');
+            return;
+        }
+
+        setSyncStatus('saving', '⏳ 更新中...');
+
+        const { error } = await sb
+            .from('user_settings')
+            .update({ class_name: newName, updated_at: new Date().toISOString() })
+            .eq('user_id', currentUser.id)
+            .eq('class_name', currentClassName);
+
+        if (error) {
+            console.error('Rename class error:', error);
+            setSyncStatus('error', '❌ 重新命名失敗');
+            return;
+        }
+
+        const idx = classList.indexOf(currentClassName);
+        if (idx >= 0) classList[idx] = newName;
+        currentClassName = newName;
+        refreshClassSelectors();
+        setSyncStatus('saved', '✅ 已更新');
+        if (input) input.value = '';
+    }
+
+    function getDefaultGameState() {
+        return {
+            students: Array.from({length: 24}, (_, i) => ({ id: i+1, name: `學生${i+1}` })),
+            chanceList: ["下一位抽到的同學可免答並直接加1分", "下一位抽到的同學可指定同學代答", "下一位抽到的同學答對，全班加1分", "下一位抽到的同學回答時，可獲得提示"],
+            fateList: ["下一位抽到的同學需使用英文作答", "下一位抽到的同學答錯，全班扣1分", "下一位抽到的同學需邊跳邊回答", "下一位抽到的同學答錯，需扣雙倍分數"]
+        };
+    }
+
+    function applyGameState(state) {
+        originalStudents = JSON.parse(JSON.stringify(state.students));
+        students = JSON.parse(JSON.stringify(originalStudents));
+        chanceList = state.chanceList || getDefaultGameState().chanceList;
+        fateList = state.fateList || getDefaultGameState().fateList;
+        studentHouses = {};
+        historyData = [];
+        currentIndex = 0;
+    }
+
     async function loadUserSettings() {
         if (!currentUser) return;
         setSyncStatus('saving', '⏳ 載入中...');
@@ -895,6 +1137,7 @@
             .from('user_settings')
             .select('*')
             .eq('user_id', currentUser.id)
+            .eq('class_name', currentClassName)
             .maybeSingle();
 
         if (error) {
@@ -931,6 +1174,7 @@
 
         const payload = {
             user_id: currentUser.id,
+            class_name: currentClassName,
             students: originalStudents,
             chance_list: chanceList,
             fate_list: fateList,
@@ -942,7 +1186,7 @@
 
         const { error } = await sb
             .from('user_settings')
-            .upsert(payload, { onConflict: 'user_id' });
+            .upsert(payload, { onConflict: 'user_id,class_name' });
 
         if (error) {
             console.error('Save settings error:', error);
