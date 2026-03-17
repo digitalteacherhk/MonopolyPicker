@@ -115,6 +115,70 @@
             background: #fff0f0 !important;
         }
 
+        /* 分組標籤 */
+        .group-badge {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            font-size: 12px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border: 2px solid #000;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.9);
+            box-shadow: 2px 2px 0 #000;
+            z-index: 6;
+            line-height: 1;
+            pointer-events: none;
+        }
+
+        /* 排行榜 */
+        .leaderboard-tabs {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin: 10px 0 14px 0;
+            flex-wrap: wrap;
+        }
+        .leaderboard-tab {
+            padding: 6px 12px;
+            border: 2px solid #000;
+            border-radius: 999px;
+            background: #eee;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 2px 2px 0 #000;
+        }
+        .leaderboard-tab.active {
+            background: var(--monopoly-yellow);
+        }
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-weight: bold;
+        }
+        .leaderboard-table th,
+        .leaderboard-table td {
+            padding: 10px 8px;
+            border-bottom: 1px dashed #ccc;
+            font-size: 14px;
+        }
+        .leaderboard-rank {
+            width: 60px;
+            text-align: center;
+        }
+        .leaderboard-score {
+            width: 90px;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+        .leaderboard-muted {
+            color: #6b7280;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
         /* 中央控制區 */
         #center-area {
             display: flex;
@@ -561,6 +625,15 @@
             background: var(--monopoly-red); color: #fff;
         }
 
+        /* ======== 分組按鈕尺寸（對齊班級管理） ======== */
+        .group-section .group-btn {
+            padding: 4px 8px;
+            font-size: 12px;
+            min-width: auto;
+            border-radius: 6px;
+            box-shadow: 2px 2px 0 #000;
+        }
+
         /* ======== 響應式設計 (RWD) ======== */
         @media (max-width: 768px), (max-aspect-ratio: 1/1) {
             #board-container {
@@ -589,7 +662,7 @@
         <h2>🎲 大富翁抽籤系統</h2>
         <p class="subtitle">Monopoly Picker by DigitalTeacherHK</p>
         <p class="subtitle">登入後，🔓解鎖班別、機會、命運和房屋存儲功能</p>
-        
+
         <!-- 登入表單 -->
         <div id="auth-login-form">
             <div class="auth-input-group">
@@ -673,6 +746,33 @@
         <label data-i18n="labelStudents"><b>1. 匯入名單</b> (格式：學號,姓名。也可直接貼上名字)</label>
         <textarea id="input-students"></textarea>
 
+        <div class="cloud-section group-section" style="background:#fff7ed; border-color:var(--monopoly-yellow);">
+            <label><b>🧩 <span data-i18n="groupTitle">分組</span></b></label>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px;">
+                <span class="leaderboard-muted" data-i18n="groupCountLabel">組別數</span>
+                <input id="input-group-count" type="number" min="1" max="12" value="4" onchange="renderGroupEditor()" style="width:80px; padding:6px 10px; border:2px solid #000; border-radius:6px; font-size:13px; font-weight:bold;">
+                <button class="group-btn" onclick="autoAssignGroups(false)" style="background: var(--monopoly-yellow);">🎯 平均分組</button>
+                <button class="group-btn" onclick="autoAssignGroups(true)" style="background: #eee;">🎲 隨機分組</button>
+                <button class="group-btn" onclick="clearGroups()" style="background: #f97373; color:#fff;">🧹 清除分組</button>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px;">
+                <button class="group-btn" onclick="toggleGroupEditor(true)" style="background:#fff;">✍️ 自定義分組</button>
+                <button class="group-btn" onclick="toggleGroupEditor(false)" style="background:#eee;">收合</button>
+            </div>
+            <div id="group-custom-editor" style="display:none; margin-top:10px; background:#fff; border:2px solid #000; border-radius:10px; padding:10px; text-align:left;">
+                <div class="leaderboard-muted" style="margin-bottom:8px;">
+                    （可逐位學生指定組別；G0 代表不分組）
+                </div>
+                <div id="group-custom-list"></div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; margin-top:10px;">
+                    <button class="group-btn" onclick="applyCustomGroupsFromEditor()" style="background: var(--monopoly-green); color:#fff;">✅ 套用自定義分組</button>
+                </div>
+            </div>
+            <div class="leaderboard-muted" style="margin-top:8px;" data-i18n="groupHint">
+                提示：分組後，棋盤會以學生背景色區分組別（G1、G2…）。
+            </div>
+        </div>
+
         <label data-i18n="labelChance"><b>2. 自訂【機會】內容</b> (每行一項)</label>
         <textarea id="input-chance"></textarea>
 
@@ -701,6 +801,20 @@
     </div>
 </div>
 
+<div id="leaderboard-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 720px; text-align: center;">
+        <h2 data-i18n="leaderboardTitle">🏆 排行榜</h2>
+        <div class="leaderboard-tabs">
+            <button class="leaderboard-tab active" id="lb-tab-group" onclick="setLeaderboardTab('group')" data-i18n="leaderboardTabGroup">組別</button>
+            <button class="leaderboard-tab" id="lb-tab-individual" onclick="setLeaderboardTab('individual')" data-i18n="leaderboardTabIndividual">個人</button>
+        </div>
+        <div id="leaderboard-content"></div>
+        <div class="modal-footer" style="justify-content: center; display: flex;">
+            <button class="btn-close-result" onclick="toggleLeaderboard(false)" data-i18n="btnConfirm">確認</button>
+        </div>
+    </div>
+</div>
+
 <div id="result-modal">
     <div class="result-content" id="result-box">
         <div class="result-title" id="result-title"></div>
@@ -719,6 +833,7 @@
                 </div>
             </div>
             <div class="bottom-right-row">
+                <button id="btn-leaderboard" class="icon-btn btn-history" onclick="toggleLeaderboard(true)" title="🏆 排行榜">🏆</button>
                 <button id="btn-history" class="icon-btn btn-history" onclick="toggleHistory(true)" title="📜 歷史紀錄">📜</button>
                 <button id="btn-settings" class="icon-btn btn-settings" onclick="toggleModal(true)" title="⚙️ 系統設定">⚙️</button>
             </div>
@@ -778,6 +893,13 @@
             statusSaved: "✅ 設定已更新！", statusWinner: "📍 抽中幸運兒", statusChance: "🎁 機會時刻",
             statusFate: "⚡ 命運降臨", statusShuffle: "🔄 大風吹，吹亂所有位置！", mapChance: "❓<br>機會", mapFate: "❗<br>命運",
             statusBuild: "🏠 建造房屋完成！", btnConfirm: "確認",
+            leaderboardTitle: "🏆 排行榜",
+            leaderboardTabGroup: "組別",
+            leaderboardTabIndividual: "個人",
+            leaderboardEmpty: "目前尚無分數（請先建造房屋）",
+            groupTitle: "分組",
+            groupCountLabel: "組別數",
+            groupHint: "提示：分組後，棋盤會以學生背景色區分組別（G1、G2…）。",
             titleWinner: "🎉 恭喜幸運兒！", titleChance: "🎁 機會時刻", titleFate: "⚡ 命運降臨",
             cloudLoggedIn: "已登入，設定會自動同步至雲端。",
             cloudGuest: "訪客模式：資料僅存於本機，登入後可同步至雲端。",
@@ -796,6 +918,13 @@
             statusSaved: "✅ Settings Updated!", statusWinner: "📍 Lucky Winner", statusChance: "🎁 Chance!",
             statusFate: "⚡ Fate!", statusShuffle: "🔄 Positions Shuffled!", mapChance: "❓<br>Chance", mapFate: "❗<br>Fate",
             statusBuild: "🏠 House built!", btnConfirm: "OK",
+            leaderboardTitle: "🏆 Leaderboard",
+            leaderboardTabGroup: "Groups",
+            leaderboardTabIndividual: "Individuals",
+            leaderboardEmpty: "No scores yet (build some houses first).",
+            groupTitle: "Grouping",
+            groupCountLabel: "Groups",
+            groupHint: "Tip: After grouping, board cell colors indicate groups (G1, G2...).",
             titleWinner: "🎉 Winner!", titleChance: "🎁 Chance", titleFate: "⚡ Fate",
             cloudLoggedIn: "Logged in. Settings sync to cloud automatically.",
             cloudGuest: "Guest mode: data is local only. Log in to sync to cloud.",
@@ -815,6 +944,22 @@
     let isAnimating = false;
     let boardW = 0, boardH = 0;
     let studentHouses = {};
+    let leaderboardTab = 'group';
+
+    const groupPalette = [
+        '#fde68a', // G1
+        '#a7f3d0', // G2
+        '#bfdbfe', // G3
+        '#fbcfe8', // G4
+        '#ddd6fe', // G5
+        '#fecaca', // G6
+        '#c7d2fe', // G7
+        '#bbf7d0', // G8
+        '#fed7aa', // G9
+        '#bae6fd', // G10
+        '#e9d5ff', // G11
+        '#d1fae5'  // G12
+    ];
 
     // ==========================================
     // 認證系統
@@ -1214,7 +1359,10 @@
         fate: new Audio('./sounds/fate.mp3'),
         bgm: new Audio('./sounds/bgm.mp3'),
         spin: new Audio('./sounds/spin.mp3'),
-        blow: new Audio('./sounds/blow.mp3')
+        blow: new Audio('./sounds/blow.mp3'),
+        building: new Audio('./sounds/building.mp3'),
+        upgrade: new Audio('./sounds/upgrade.mp3'),
+        deletehouse: new Audio('./sounds/deletehouse.mp3')
     };
 
     sounds.bgm.loop = true;
@@ -1301,6 +1449,8 @@
         document.getElementById('input-students').value = originalStudents.map(s => `${s.id},${s.name}`).join('\n');
         document.getElementById('input-chance').value = chanceList.join('\n');
         document.getElementById('input-fate').value = fateList.join('\n');
+        syncGroupCountUI();
+        renderGroupEditor();
         refreshAudioButtons();
         setControlsEnabled(true);
         changeLanguage(currentLang);
@@ -1344,15 +1494,18 @@
     function saveSettings() {
         const rawStudents = document.getElementById('input-students').value.trim().split('\n');
         let parsed = [];
+        const prevGroupById = new Map((originalStudents || []).map(s => [String(s.id), s.group || null]));
 
         rawStudents.forEach(line => {
             let tLine = line.trim();
             if(tLine === '') return;
             if(tLine.includes(',')) {
                 let parts = tLine.split(',');
-                parsed.push({ id: parts[0].trim(), name: parts[1].trim() || parts[0].trim() });
+                const id = parts[0].trim();
+                const name = (parts[1] || '').trim() || id;
+                parsed.push({ id, name, group: prevGroupById.get(String(id)) || null });
             } else {
-                parsed.push({ id: tLine, name: tLine });
+                parsed.push({ id: tLine, name: tLine, group: prevGroupById.get(String(tLine)) || null });
             }
         });
 
@@ -1382,6 +1535,122 @@
         }
     }
 
+    function syncGroupCountUI() {
+        const el = document.getElementById('input-group-count');
+        if (!el) return;
+        const currentMaxGroup = Math.max(0, ...(originalStudents || []).map(s => Number(s.group) || 0));
+        if (!el.value) el.value = '4';
+        if (currentMaxGroup > 0) {
+            const next = Math.min(12, Math.max(1, currentMaxGroup));
+            el.value = String(next);
+        }
+    }
+
+    function getGroupCountFromUI() {
+        const el = document.getElementById('input-group-count');
+        let n = el ? Number(el.value) : 4;
+        if (!Number.isFinite(n) || n < 1) n = 1;
+        if (n > 12) n = 12;
+        if (el) el.value = String(n);
+        return n;
+    }
+
+    function autoAssignGroups(randomize) {
+        const groupCount = getGroupCountFromUI();
+        const list = JSON.parse(JSON.stringify(originalStudents || []));
+        if (!list.length) return;
+
+        const idxs = Array.from({ length: list.length }, (_, i) => i);
+        if (randomize) idxs.sort(() => Math.random() - 0.5);
+
+        idxs.forEach((idx, k) => {
+            list[idx].group = (k % groupCount) + 1;
+        });
+
+        originalStudents = list;
+        students = JSON.parse(JSON.stringify(originalStudents));
+        document.getElementById('input-students').value = originalStudents.map(s => `${s.id},${s.name}`).join('\n');
+        generateMap();
+        renderBoard();
+        renderGroupEditor();
+        debouncedSave();
+    }
+
+    function clearGroups() {
+        const list = JSON.parse(JSON.stringify(originalStudents || []));
+        list.forEach(s => { s.group = null; });
+        originalStudents = list;
+        students = JSON.parse(JSON.stringify(originalStudents));
+        document.getElementById('input-students').value = originalStudents.map(s => `${s.id},${s.name}`).join('\n');
+        generateMap();
+        renderBoard();
+        renderGroupEditor();
+        debouncedSave();
+    }
+
+    function toggleGroupEditor(show) {
+        const panel = document.getElementById('group-custom-editor');
+        if (!panel) return;
+        panel.style.display = show ? 'block' : 'none';
+        if (show) renderGroupEditor();
+    }
+
+    function renderGroupEditor() {
+        const wrap = document.getElementById('group-custom-list');
+        const panel = document.getElementById('group-custom-editor');
+        if (!wrap || !panel) return;
+        if (panel.style.display === 'none') return;
+
+        const groupCount = getGroupCountFromUI();
+        const opts = ['<option value="0">G0（不分組）</option>']
+            .concat(Array.from({ length: groupCount }, (_, i) => `<option value="${i + 1}">G${i + 1}</option>`))
+            .join('');
+
+        const rows = (originalStudents || []).map(s => {
+            const g = Number(s.group) || 0;
+            return `
+                <div style="display:flex; gap:10px; align-items:center; padding:6px 4px; border-bottom:1px dashed #ddd;">
+                    <div style="flex:1; font-weight:800;">${s.name}</div>
+                    <select data-student-id="${String(s.id)}" style="font-weight:800; padding:4px 8px; border:2px solid #000; border-radius:8px;">
+                        ${opts}
+                    </select>
+                </div>
+            `;
+        }).join('');
+
+        wrap.innerHTML = rows || `<div style="padding:8px; color:#666; font-weight:bold;">${currentLang === 'en' ? 'No students.' : '沒有學生名單。'}</div>`;
+
+        wrap.querySelectorAll('select[data-student-id]').forEach(sel => {
+            const id = sel.getAttribute('data-student-id');
+            const stu = (originalStudents || []).find(x => String(x.id) === String(id));
+            const g = stu ? (Number(stu.group) || 0) : 0;
+            sel.value = String(g);
+        });
+    }
+
+    function applyCustomGroupsFromEditor() {
+        const wrap = document.getElementById('group-custom-list');
+        if (!wrap) return;
+        const selections = new Map();
+        wrap.querySelectorAll('select[data-student-id]').forEach(sel => {
+            selections.set(String(sel.getAttribute('data-student-id')), Number(sel.value) || 0);
+        });
+
+        const list = JSON.parse(JSON.stringify(originalStudents || []));
+        list.forEach(s => {
+            const g = selections.get(String(s.id)) || 0;
+            s.group = g > 0 ? g : null;
+        });
+
+        originalStudents = list;
+        students = JSON.parse(JSON.stringify(originalStudents));
+        document.getElementById('input-students').value = originalStudents.map(s => `${s.id},${s.name}`).join('\n');
+        generateMap();
+        renderBoard();
+        renderGroupEditor();
+        debouncedSave();
+    }
+
     function generateMap() {
         let N = students.length;
         let specialCount = 4;
@@ -1407,16 +1676,18 @@
                 });
             } else {
                 if(students[sIdx]) {
-                    let colorIdx = sIdx % colors.length;
                     const stu = students[sIdx];
                     if (!studentHouses[stu.id]) {
                         studentHouses[stu.id] = { small: 0, middle: 0, large: 0 };
                     }
+                    const g = Number(stu.group) || 0;
+                    const groupColor = g > 0 ? (groupPalette[(g - 1) % groupPalette.length] || colors[sIdx % colors.length]) : colors[sIdx % colors.length];
                     mapData.push({
                         type: 'student',
                         name: stu.name,
                         id: stu.id,
-                        color: colors[colorIdx],
+                        group: g || null,
+                        color: groupColor,
                         houses: studentHouses[stu.id]
                     });
                     sIdx++;
@@ -1468,7 +1739,8 @@
             if (data.type === 'student') {
                 cell.style.backgroundColor = data.color;
                 const housesHTML = getHouseIconsHTML(data.houses);
-                cell.innerHTML = `<div class="cell-text">${data.name}</div>${housesHTML}`;
+                const badge = data.group ? `<div class="group-badge">G${data.group}</div>` : '';
+                cell.innerHTML = `${badge}<div class="cell-text">${data.name}</div>${housesHTML}`;
                 cell.addEventListener('click', (e) => {
                     e.stopPropagation();
                     openHouseEditor(data.id);
@@ -1612,34 +1884,49 @@
             studentHouses[idKey] = { small: 0, middle: 0, large: 0 };
         }
         const info = studentHouses[idKey];
+        let didUpgrade = false;
+        let didBuild = false;
+        let didDelete = false;
 
         if (delta > 0) {
             for (let k = 0; k < delta; k++) {
                 info.small = (info.small || 0) + 1;
+                didBuild = true;
                 while (info.small >= 3) {
                     info.small -= 3;
                     info.middle = (info.middle || 0) + 1;
+                    didUpgrade = true;
                 }
                 while (info.middle >= 3) {
                     info.middle -= 3;
                     info.large = (info.large || 0) + 1;
+                    didUpgrade = true;
                 }
             }
         } else if (delta < 0) {
             for (let k = 0; k < Math.abs(delta); k++) {
                 if (info.small > 0) {
                     info.small -= 1;
+                    didDelete = true;
                 } else if (info.middle > 0) {
                     info.middle -= 1;
                     info.small += 2;
+                    didDelete = true;
                 } else if (info.large > 0) {
                     info.large -= 1;
                     info.middle += 2;
+                    didDelete = true;
                 }
             }
         }
 
         studentHouses[idKey] = info;
+        if (delta > 0) {
+            if (didUpgrade) playSfx('upgrade');
+            else if (didBuild) playSfx('building');
+        } else if (delta < 0) {
+            if (didDelete) playSfx('deletehouse');
+        }
         return info;
     }
 
@@ -1660,6 +1947,131 @@
 
         closeResult();
         debouncedSave();
+    }
+
+    function calcStudentScoreById(studentId) {
+        const h = studentHouses[studentId] || { small: 0, middle: 0, large: 0 };
+        // 計分：小屋=1，中屋=3，大屋=9（配合 3 合 1 的升級規則）
+        return (h.small || 0) + (h.middle || 0) * 3 + (h.large || 0) * 9;
+    }
+
+    function computeLeaderboards() {
+        const all = (originalStudents || []).map(s => {
+            const idKey = String(s.id);
+            return {
+                id: idKey,
+                name: s.name,
+                group: Number(s.group) || 0,
+                score: calcStudentScoreById(idKey)
+            };
+        });
+        const anyScore = all.some(x => x.score > 0);
+
+        const individuals = all
+            .slice()
+            .sort((a, b) => b.score - a.score || String(a.name).localeCompare(String(b.name), 'zh-Hant'));
+
+        const groupMap = new Map();
+        all.forEach(p => {
+            const g = p.group || 0;
+            if (g <= 0) return;
+            const cur = groupMap.get(g) || { group: g, score: 0, members: 0 };
+            cur.score += p.score;
+            cur.members += 1;
+            groupMap.set(g, cur);
+        });
+        const groups = Array.from(groupMap.values())
+            .sort((a, b) => b.score - a.score || a.group - b.group);
+
+        return { anyScore, individuals, groups };
+    }
+
+    function setLeaderboardTab(tab) {
+        leaderboardTab = tab === 'individual' ? 'individual' : 'group';
+        const gBtn = document.getElementById('lb-tab-group');
+        const iBtn = document.getElementById('lb-tab-individual');
+        if (gBtn) gBtn.classList.toggle('active', leaderboardTab === 'group');
+        if (iBtn) iBtn.classList.toggle('active', leaderboardTab === 'individual');
+        renderLeaderboardContent();
+    }
+
+    function renderLeaderboardContent() {
+        const wrap = document.getElementById('leaderboard-content');
+        if (!wrap) return;
+        const { anyScore, individuals, groups } = computeLeaderboards();
+        if (!anyScore) {
+            wrap.innerHTML = `<div style="padding:18px; color:#666; font-weight:bold;">${i18n[currentLang].leaderboardEmpty}</div>`;
+            return;
+        }
+
+        if (leaderboardTab === 'individual') {
+            const rows = individuals.map((p, idx) => {
+                const groupText = p.group > 0 ? `G${p.group}` : '-';
+                return `
+                    <tr>
+                        <td class="leaderboard-rank">${idx + 1}</td>
+                        <td>${p.name} <span class="leaderboard-muted">(${groupText})</span></td>
+                        <td class="leaderboard-score">${p.score}</td>
+                    </tr>
+                `;
+            }).join('');
+            wrap.innerHTML = `
+                <table class="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th class="leaderboard-rank">#</th>
+                            <th>${currentLang === 'en' ? 'Player' : '學生'}</th>
+                            <th class="leaderboard-score">${currentLang === 'en' ? 'Score' : '分數'}</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                <div class="leaderboard-muted" style="margin-top:10px;">
+                    ${currentLang === 'en' ? 'Scoring: small=1, middle=3, large=9' : '計分：小屋=1，中屋=3，大屋=9'}
+                </div>
+            `;
+        } else {
+            if (!groups.length) {
+                wrap.innerHTML = `<div style="padding:18px; color:#666; font-weight:bold;">${currentLang === 'en' ? 'No groups yet (assign groups first).' : '尚未分組（請先在設定中分組）'}</div>`;
+                return;
+            }
+            const rows = groups.map((g, idx) => {
+                const bg = groupPalette[(g.group - 1) % groupPalette.length] || '#eee';
+                return `
+                    <tr>
+                        <td class="leaderboard-rank">${idx + 1}</td>
+                        <td><span style="display:inline-block; width:14px; height:14px; background:${bg}; border:2px solid #000; border-radius:4px; vertical-align:middle; margin-right:8px;"></span>G${g.group} <span class="leaderboard-muted">(${g.members}${currentLang === 'en' ? ' ppl' : '人'})</span></td>
+                        <td class="leaderboard-score">${g.score}</td>
+                    </tr>
+                `;
+            }).join('');
+            wrap.innerHTML = `
+                <table class="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th class="leaderboard-rank">#</th>
+                            <th>${currentLang === 'en' ? 'Group' : '組別'}</th>
+                            <th class="leaderboard-score">${currentLang === 'en' ? 'Score' : '分數'}</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                <div class="leaderboard-muted" style="margin-top:10px;">
+                    ${currentLang === 'en' ? 'Group score is the sum of member scores.' : '組別分數 = 組員分數總和'}
+                </div>
+            `;
+        }
+    }
+
+    function toggleLeaderboard(show) {
+        const modal = document.getElementById('leaderboard-modal');
+        if (!modal) return;
+        if (show) {
+            setLeaderboardTab(leaderboardTab);
+            modal.style.display = 'flex';
+        } else {
+            modal.style.display = 'none';
+        }
     }
 
     function openHouseEditor(studentId) {
@@ -1743,7 +2155,7 @@
     }
 
     function setControlsEnabled(enabled) {
-        const ids = ['btn-roll', 'btn-marquee', 'btn-shuffle', 'btn-reset', 'btn-history', 'btn-settings'];
+        const ids = ['btn-roll', 'btn-marquee', 'btn-shuffle', 'btn-reset', 'btn-leaderboard', 'btn-history', 'btn-settings'];
         ids.forEach(id => {
             const el = document.getElementById(id);
             if (!el) return;
@@ -1767,6 +2179,7 @@
         setStatus('normal', i18n[lang].ready);
         generateMap();
         renderBoard();
+        renderLeaderboardContent();
         debouncedSave();
     }
 
